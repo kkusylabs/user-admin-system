@@ -2,6 +2,8 @@ package io.github.kkusylabs.useradmin.backend.models;
 
 import jakarta.persistence.*;
 
+import java.util.Objects;
+
 /**
  * Represents an application user.
  * <p>
@@ -13,7 +15,7 @@ import jakarta.persistence.*;
  */
 @Entity
 @Table(name = "users")
-public class User {
+public class User extends AuditableEntity {
 
     /**
      * The database-generated primary key for the user.
@@ -43,9 +45,9 @@ public class User {
     private String fullName;
 
     /**
-     * The user's unique email address.
+     * The user's email address, if provided.
      */
-    @Column(nullable = false, unique = true)
+    @Column
     private String email;
 
     /**
@@ -61,6 +63,24 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    /**
+     * The user's phone number.
+     */
+    @Column
+    private String phone;
+
+    /**
+     * The user's job title.
+     */
+    @Column
+    private String jobTitle;
+
+    /**
+     * Whether the user is active.
+     */
+    @Column(nullable = false)
+    private boolean active = true;
 
     /**
      * Creates an empty user instance.
@@ -185,5 +205,120 @@ public class User {
      */
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    /**
+     * Returns the user's phone number.
+     *
+     * @return the phone number
+     */
+    public String getPhone() {
+        return phone;
+    }
+
+    /**
+     * Sets the user's phone number.
+     *
+     * @param phone the phone number to assign
+     */
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    /**
+     * Returns the user's job title.
+     *
+     * @return the job title
+     */
+    public String getJobTitle() {
+        return jobTitle;
+    }
+
+    /**
+     * Sets the user's job title.
+     *
+     * @param jobTitle the job title to assign
+     */
+    public void setJobTitle(String jobTitle) {
+        this.jobTitle = jobTitle;
+    }
+
+    /**
+     * Indicates whether the user is active.
+     *
+     * @return {@code true} if the user is active; {@code false} otherwise
+     */
+    public boolean isActive() {
+        return active;
+    }
+
+    /**
+     * Compares this user to another object for equality.
+     * <p>
+     * Equality is based solely on the {@code id}. Two users are considered equal
+     * if they represent the same persisted entity.
+     * </p>
+     *
+     * @param o the object to compare with
+     * @return {@code true} if both objects have the same non-null identifier; {@code false} otherwise
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User that)) return false;
+        return id != null && Objects.equals(id, that.id);
+    }
+
+    /**
+     * Indicates whether this user has administrator privileges.
+     *
+     * @return {@code true} if the user's role is {@link Role#ADMIN}; {@code false} otherwise
+     */
+    public boolean isAdmin() {
+        return role == Role.ADMIN;
+    }
+
+    /**
+     * Indicates whether this user has manager-level privileges.
+     *
+     * @return {@code true} if the user's role is {@link Role#MANAGER}; {@code false} otherwise
+     */
+    public boolean isManager() {
+        return role == Role.MANAGER;
+    }
+
+    /**
+     * Indicates whether this user is a basic user.
+     * <p>
+     * A {@code null} role is treated as {@link Role#USER} for backward compatibility
+     * or defaulting behavior.
+     *
+     * @return {@code true} if the role is {@code null} or {@link Role#USER}; {@code false} otherwise
+     */
+    public boolean isBasicUser() {
+        return role == null || role == Role.USER;
+    }
+
+    /**
+     * Returns a hash code for this user.
+     * <p>
+     * The hash code is based on the class type to remain stable before and after
+     * persistence when the {@code id} may not yet be assigned.
+     * </p>
+     *
+     * @return a hash code value for this object
+     */
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
+    /**
+     * Sets whether the user is active.
+     *
+     * @param active {@code true} to mark the user as active; {@code false} otherwise
+     */
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

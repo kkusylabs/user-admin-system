@@ -98,11 +98,9 @@ public class SecurityConfig {
      *
      * @param configuration authentication configuration supplied by Spring
      * @return the authentication manager
-     * @throws Exception if the authentication manager cannot be created
      */
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration)
-            throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) {
         return configuration.getAuthenticationManager();
     }
 

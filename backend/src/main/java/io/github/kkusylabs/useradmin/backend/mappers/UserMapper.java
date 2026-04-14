@@ -1,0 +1,134 @@
+package io.github.kkusylabs.useradmin.backend.mappers;
+
+import io.github.kkusylabs.useradmin.backend.dtos.CreateUserRequest;
+import io.github.kkusylabs.useradmin.backend.dtos.UpdateUserRequest;
+import io.github.kkusylabs.useradmin.backend.dtos.UserResponse;
+import io.github.kkusylabs.useradmin.backend.models.Department;
+import io.github.kkusylabs.useradmin.backend.models.Role;
+import io.github.kkusylabs.useradmin.backend.models.User;
+import io.github.kkusylabs.useradmin.backend.util.StringUtils;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+
+/**
+ * Maps between {@link User} entities and user-related DTOs.
+ *
+ * <p>
+ * This component is responsible for constructing and updating {@link User}
+ * entities from request DTOs and for converting entities into
+ * {@link UserResponse} objects.
+ * </p>
+ *
+ * <p>
+ * Normalization and field-level transformations, such as trimming text and
+ * hashing passwords, are handled here to keep service-layer code focused on
+ * application flow.
+ * </p>
+ */
+@Component
+public final class UserMapper {
+
+    private final PasswordEncoder passwordEncoder;
+
+    /**
+     * Creates a new mapper instance.
+     *
+     * @param passwordEncoder encoder used to hash user passwords during entity creation
+     */
+    public UserMapper(PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    /**
+     * Creates a new {@link User} entity from a creation request.
+     *
+     * <p>
+     * String fields are normalized as needed before being assigned. The password
+     * is hashed before storage. If {@code active} is not provided, it defaults
+     * to {@code true}.
+     * </p>
+     *
+     * @param request the user creation request
+     * @param department the resolved department for the new user, or {@code null}
+     * @param role the role to assign to the new user
+     * @return a new user entity populated from the request
+     */
+    public User toEntity(CreateUserRequest request, Department department, Role role) {
+        User user = new User();
+        user.setUsername(StringUtils.normalizeUsername(request.username()));
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        user.setFullName(request.fullName().trim());
+        user.setEmail(StringUtils.normalizeEmail(request.email()));
+        user.setPhone(StringUtils.trimToNull(request.phone()));
+        user.setJobTitle(StringUtils.trimToNull(request.jobTitle()));
+        user.setActive(request.active() == null || request.active());
+        user.setRole(role);
+        user.setDepartment(department);
+        return user;
+    }
+
+    /**
+     * Applies an update request to an existing {@link User} entity.
+     *
+     * <p>
+     * Only non-{@code null} fields in the request are applied. Fields omitted
+     * from the request are left unchanged.
+     * </p>
+     *
+     * @param user the user entity to update
+     * @param request the update request
+     * @param requestedDepartment the resolved department to assign, or {@code null}
+     *                            if no department change was requested
+     */
+    public void updateEntity(User user, UpdateUserRequest request, Department requestedDepartment) {
+        if (request.fullName() != null) {
+            user.setFullName(request.fullName().trim());
+        }
+
+        if (request.email() != null) {
+            user.setEmail(StringUtils.normalizeEmail(request.email()));
+        }
+
+        if (request.phone() != null) {
+            user.setPhone(StringUtils.trimToNull(request.phone()));
+        }
+
+        if (request.jobTitle() != null) {
+            user.setJobTitle(StringUtils.trimToNull(request.jobTitle()));
+        }
+
+        if (request.active() != null) {
+            user.setActive(request.active());
+        }
+
+        if (request.role() != null) {
+            user.setRole(request.role());
+        }
+
+        if (requestedDepartment != null) {
+            user.setDepartment(requestedDepartment);
+        }
+    }
+
+    /**
+     * Converts a {@link User} entity into a {@link UserResponse}.
+     *
+     * @param user the user entity
+     * @param department the user's department, or {@code null}
+     * @return the corresponding response DTO
+     */
+    public UserResponse toResponse(User user, Department department) {
+        return new UserResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getFullName(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getJobTitle(),
+                user.isActive(),
+                user.getRole(),
+                department != null ? department.getId() : null,
+                department != null ? department.getName() : null
+        );
+    }
+}
