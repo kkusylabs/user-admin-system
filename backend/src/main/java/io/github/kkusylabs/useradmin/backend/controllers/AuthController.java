@@ -7,7 +7,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,7 +26,7 @@ import java.util.Map;
  * @author kkusy
  */
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -104,27 +103,6 @@ public class AuthController {
         return value == null ? null : value.trim().toLowerCase();
     }
 
-    /**
-     * Request payload for user signup.
-     *
-     * @param username the desired username
-     * @param email    the user's email address
-     * @param password the raw password
-     */
-    public record SignupRequest(
-            @NotBlank
-            @Size(min = 3, max = 50)
-            String username,
-
-            @NotBlank
-            @Email
-            String email,
-
-            @NotBlank
-            @Size(min = 8, max = 100)
-            String password
-    ) {
-    }
 
     /**
      * Request payload for user login.
