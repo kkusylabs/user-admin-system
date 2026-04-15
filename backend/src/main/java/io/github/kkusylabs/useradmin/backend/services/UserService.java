@@ -69,7 +69,7 @@ public class UserService {
      *
      * <p>Flow:</p>
      * <ul>
-     *     <li>Ensures the acting user is active</li>
+     *     <li>Loads the acting user</li>
      *     <li>Normalizes and validates username uniqueness</li>
      *     <li>Resolves the requested department</li>
      *     <li>Applies default role ({@link Role#USER}) if not specified</li>
@@ -87,57 +87,59 @@ public class UserService {
      */
     @Transactional
     public UserResponse createUser(CreateUserRequest request, Long actorId) {
-        User actor = getActiveActor(actorId);
+        User actor = getActor(actorId);
+        CreateUserRequest sanitized = sanitize(request);
 
-        String normalizedUsername = StringUtils.normalizeUsername(request.username());
-
-        if (userRepository.existsByUsername(normalizedUsername)) {
-            throw new UsernameAlreadyExistsException(normalizedUsername);
+        if (userRepository.existsByUsername(sanitized.username())) {
+            throw new UsernameAlreadyExistsException(sanitized.username());
         }
 
-        Department department = resolveRequestedDepartment(request.departmentId());
-        Role requestedRole = request.role() != null ? request.role() : Role.USER;
-
-        userAuthorizationService.validateCreation(actor, requestedRole, department);
-
-        User user = userMapper.toEntity(request, department, requestedRole);
-        return userMapper.toResponse(userRepository.save(user), department);
+        Department requestedDepartment = resolveRequestedDepartment(sanitized.departmentId());
+        userAuthorizationService.validateCreation(actor, sanitized.role(), requestedDepartment);
+        User user = userMapper.toEntity(sanitized, requestedDepartment);
+        return userMapper.toResponse(userRepository.save(user), requestedDepartment);
     }
 
     /**
-     * Retrieves the acting user and ensures the account is active.
+     * Sanitizes a create user request by normalizing string fields and applying default values.
+     *
+     * @param request the original request
+     * @return a sanitized request with normalized values
+     */
+    private CreateUserRequest sanitize(CreateUserRequest request) {
+        return new CreateUserRequest(
+                StringUtils.normalizeUsername(request.username()),
+                request.password(),
+                request.fullName().trim(),
+                StringUtils.normalizeEmail(request.email()),
+                StringUtils.normalizeOptional(request.phone()),
+                StringUtils.normalizeOptional(request.jobTitle()),
+                request.active() != null ? request.active() : Boolean.TRUE,
+                request.departmentId(),
+                request.role() != null ? request.role() : Role.USER
+        );
+    }
+
+    /**
+     * Retrieves the acting user.
      *
      * @param actorId the identifier of the authenticated user
-     * @return the active user
-     * @throws UserNotFoundException            if no user exists with the given identifier
-     * @throws InsufficientPermissionsException if the user is inactive
+     * @return the user
+     * @throws UserNotFoundException if no user exists with the given identifier
      */
-    private User getActiveActor(Long actorId) {
-        User actor = userRepository.findById(actorId)
+    private User getActor(Long actorId) {
+        return userRepository.findById(actorId)
                 .orElseThrow(() -> new UserNotFoundException(actorId));
-
-        if (!actor.isActive()) {
-            throw new InsufficientPermissionsException("Inactive users may not perform this operation.");
-        }
-
-        return actor;
     }
 
     /**
      * Retrieves a paginated list of users.
      *
-     * <p>Requires the acting user to be active.</p>
-     *
      * @param pageable pagination and sorting information
-     * @param actorId  the identifier of the authenticated user
      * @return a page of user response DTOs
-     * @throws UserNotFoundException            if the actor cannot be found
-     * @throws InsufficientPermissionsException if the actor is inactive
      */
     @Transactional(readOnly = true)
-    public Page<UserResponse> findAll(Pageable pageable, Long actorId) {
-        getActiveActor(actorId);
-
+    public Page<UserResponse> findAll(Pageable pageable) {
         return userRepository.findAll(pageable)
                 .map(user -> userMapper.toResponse(user, user.getDepartment()));
     }
@@ -145,18 +147,12 @@ public class UserService {
     /**
      * Retrieves a user by identifier.
      *
-     * <p>Requires the acting user to be active.</p>
-     *
-     * @param id      the identifier of the user
-     * @param actorId the identifier of the authenticated user
+     * @param id the identifier of the user
      * @return the user response DTO
-     * @throws UserNotFoundException            if the actor or target user cannot be found
-     * @throws InsufficientPermissionsException if the actor is inactive
+     * @throws UserNotFoundException if the user cannot be found
      */
     @Transactional(readOnly = true)
-    public UserResponse findById(Long id, Long actorId) {
-        getActiveActor(actorId);
-
+    public UserResponse findById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
@@ -166,18 +162,14 @@ public class UserService {
     /**
      * Deletes a user.
      *
-     * <p>
-     * Authorization is enforced by {@link UserAuthorizationService}.
-     * </p>
-     *
      * @param targetUserId the identifier of the user to delete
-     * @param actorId      the identifier of the authenticated user
-     * @throws UserNotFoundException            if the actor or target user cannot be found
+     * @param actorId the identifier of the authenticated user
+     * @throws UserNotFoundException if the actor or target user cannot be found
      * @throws InsufficientPermissionsException if the actor is not permitted to delete the target user
      */
     @Transactional
     public void deleteById(Long targetUserId, Long actorId) {
-        User actor = getActiveActor(actorId);
+        User actor = getActor(actorId);
 
         User target = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new UserNotFoundException(targetUserId));
@@ -189,31 +181,48 @@ public class UserService {
     /**
      * Updates an existing user.
      *
-     * <p>
-     * Applies requested changes after validating permissions through
-     * {@link UserAuthorizationService}.
-     * </p>
-     *
      * @param targetUserId the identifier of the user to update
-     * @param request      the update request
-     * @param actorId      the identifier of the authenticated user
+     * @param request the update request
+     * @param actorId the identifier of the authenticated user
      * @return the updated user response DTO
-     * @throws UserNotFoundException            if the actor or target user cannot be found
-     * @throws DepartmentNotFoundException      if the requested department does not exist
+     * @throws UserNotFoundException if the actor or target user cannot be found
+     * @throws DepartmentNotFoundException if the requested department does not exist
      * @throws InsufficientPermissionsException if the actor is not permitted to perform the update
      */
     @Transactional
     public UserResponse updateById(Long targetUserId, UpdateUserRequest request, Long actorId) {
-        User actor = getActiveActor(actorId);
+        User actor = getActor(actorId);
 
         User target = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new UserNotFoundException(targetUserId));
 
-        Department requestedDepartment = resolveRequestedDepartment(request.departmentId());
-        userAuthorizationService.validateUpdate(actor, target, request, requestedDepartment);
-        userMapper.updateEntity(target, request, requestedDepartment);
+        UpdateUserRequest sanitized = sanitize(request);
+        Department requestedDepartment = resolveRequestedDepartment(sanitized.departmentId());
+        userAuthorizationService.validateUpdate(actor, target, sanitized, requestedDepartment);
+        userMapper.updateEntity(target, sanitized, requestedDepartment);
         User savedUser = userRepository.save(target);
         return userMapper.toResponse(savedUser, savedUser.getDepartment());
+    }
+
+    /**
+     * Sanitizes an update user request by normalizing non-null fields.
+     * <p>
+     * Null values are preserved to indicate no change.
+     * </p>
+     *
+     * @param request the original request
+     * @return a sanitized request with normalized values
+     */
+    private UpdateUserRequest sanitize(UpdateUserRequest request) {
+        return new UpdateUserRequest(
+                StringUtils.normalizeOptional(request.fullName()),
+                StringUtils.normalizeEmail(request.email()),
+                StringUtils.normalizeOptional(request.phone()),
+                StringUtils.normalizeOptional(request.jobTitle()),
+                request.active(),
+                request.departmentId(),
+                request.role()
+        );
     }
 
     /**

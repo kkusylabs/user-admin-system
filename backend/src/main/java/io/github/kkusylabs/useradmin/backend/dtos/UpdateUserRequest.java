@@ -1,6 +1,10 @@
 package io.github.kkusylabs.useradmin.backend.dtos;
 
 import io.github.kkusylabs.useradmin.backend.models.Role;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 /**
  * Request payload for updating an existing user.
@@ -19,11 +23,22 @@ import io.github.kkusylabs.useradmin.backend.models.Role;
  * </ul>
  */
 public record UpdateUserRequest(
+        @Size(max = 100)
         String fullName,
+
+        @Email
+        @Size(max = 255)
         String email,
+
+        @Size(max = 30)
         String phone,
+
+        @Size(max = 100)
         String jobTitle,
+
         Boolean active,
+
         Long departmentId,
+
         Role role
 ) {}

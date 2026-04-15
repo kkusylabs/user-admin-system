@@ -1,11 +1,11 @@
 package io.github.kkusylabs.useradmin.backend.config;
 
+import io.github.kkusylabs.useradmin.backend.security.ActiveUserFilter;
 import io.github.kkusylabs.useradmin.backend.security.CustomUserDetailsService;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -43,6 +43,7 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService customUserDetailsService;
     private final String jwtSecret;
+    private final ActiveUserFilter activeUserFilter;
 
     /**
      * Creates the security configuration.
@@ -52,9 +53,11 @@ public class SecurityConfig {
      */
     public SecurityConfig(
             CustomUserDetailsService customUserDetailsService,
-            @Value("${app.jwt.secret}") String jwtSecret) {
+            @Value("${app.jwt.secret}") String jwtSecret,
+            ActiveUserFilter activeUserFilter) {
         this.customUserDetailsService = customUserDetailsService;
         this.jwtSecret = jwtSecret;
+        this.activeUserFilter = activeUserFilter;
     }
 
     /**
@@ -72,11 +75,11 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/users/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/departments/**").authenticated()
                         .anyRequest().authenticated()
                 )
-                .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.decoder(jwtDecoder())));
+                .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.decoder(jwtDecoder())))
+                .addFilterAfter(activeUserFilter,
+                        org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class);;
 
         return http.build();
     }

@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -41,6 +42,7 @@ public class UserController {
      * @return the created user
      */
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request,
                                                    @AuthenticationPrincipal Jwt jwt) {
         Long actorId = jwt.getClaim("userId");
@@ -56,8 +58,7 @@ public class UserController {
      */
     @GetMapping
     public ResponseEntity<Page<UserResponse>> findAll(Pageable pageable, @AuthenticationPrincipal Jwt jwt) {
-        Long actorId = jwt.getClaim("userId");
-        return ResponseEntity.ok(userService.findAll(pageable, actorId));
+        return ResponseEntity.ok(userService.findAll(pageable));
     }
 
     /**
@@ -68,16 +69,15 @@ public class UserController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> findById(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
-        Long actorId = jwt.getClaim("userId");
-        return ResponseEntity.ok(userService.findById(id, actorId));
+        return ResponseEntity.ok(userService.findById(id));
     }
 
     /**
      * Updates an existing user.
      *
-     * @param id the identifier of the user to update
+     * @param id      the identifier of the user to update
      * @param request the requested changes
-     * @param jwt the authenticated user's JWT
+     * @param jwt     the authenticated user's JWT
      * @return the updated user
      */
     @PutMapping("/{id}")
@@ -92,11 +92,12 @@ public class UserController {
     /**
      * Deletes a user by its identifier.
      *
-     * @param id the identifier of the user to delete
+     * @param id  the identifier of the user to delete
      * @param jwt the authenticated user's JWT
      * @return an empty response with HTTP 204
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<Void> deleteById(@PathVariable Long id,
                                            @AuthenticationPrincipal Jwt jwt) {
         Long actorId = jwt.getClaim("userId");

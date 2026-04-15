@@ -50,19 +50,18 @@ public final class UserMapper {
      *
      * @param request the user creation request
      * @param department the resolved department for the new user, or {@code null}
-     * @param role the role to assign to the new user
      * @return a new user entity populated from the request
      */
-    public User toEntity(CreateUserRequest request, Department department, Role role) {
+    public User toEntity(CreateUserRequest request, Department department) {
         User user = new User();
-        user.setUsername(StringUtils.normalizeUsername(request.username()));
+        user.setUsername(request.username());
         user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setFullName(request.fullName().trim());
-        user.setEmail(StringUtils.normalizeEmail(request.email()));
-        user.setPhone(StringUtils.trimToNull(request.phone()));
-        user.setJobTitle(StringUtils.trimToNull(request.jobTitle()));
-        user.setActive(request.active() == null || request.active());
-        user.setRole(role);
+        user.setFullName(request.fullName());
+        user.setEmail(request.email());
+        user.setPhone(request.phone());
+        user.setJobTitle(request.jobTitle());
+        user.setActive(request.active());
+        user.setRole(request.role());
         user.setDepartment(department);
         return user;
     }
@@ -82,19 +81,19 @@ public final class UserMapper {
      */
     public void updateEntity(User user, UpdateUserRequest request, Department requestedDepartment) {
         if (request.fullName() != null) {
-            user.setFullName(request.fullName().trim());
+            user.setFullName(request.fullName());
         }
 
         if (request.email() != null) {
-            user.setEmail(StringUtils.normalizeEmail(request.email()));
+            user.setEmail(request.email());
         }
 
         if (request.phone() != null) {
-            user.setPhone(StringUtils.trimToNull(request.phone()));
+            user.setPhone(request.phone());
         }
 
         if (request.jobTitle() != null) {
-            user.setJobTitle(StringUtils.trimToNull(request.jobTitle()));
+            user.setJobTitle(request.jobTitle());
         }
 
         if (request.active() != null) {

@@ -67,7 +67,7 @@ public class UserAuthorizationService {
     }
 
     /**
-     * Validates manager-specific rules for user creation.
+     * Applies manager-specific constraints for user creation.
      */
     private void validateManagerCreationRules(User actor, Role requestedRole, Department requestedDepartment) {
         if (requestedRole != Role.USER) {
@@ -90,7 +90,7 @@ public class UserAuthorizationService {
      *     <li>Managers may delete only basic users in their own department.</li>
      * </ul>
      *
-     * @param actor  the authenticated user performing the operation
+     * @param actor the authenticated user performing the operation
      * @param target the user to be deleted
      * @throws InsufficientPermissionsException if the operation is not permitted
      */
@@ -114,7 +114,7 @@ public class UserAuthorizationService {
     }
 
     /**
-     * Validates administrator-specific deletion rules.
+     * Applies administrator-specific constraints for user deletion.
      */
     private void validateAdminDeletionRules(User target) {
         if (wouldLeaveSystemWithoutActiveAdmin(target)) {
@@ -125,7 +125,7 @@ public class UserAuthorizationService {
     }
 
     /**
-     * Validates manager-specific deletion rules.
+     * Applies manager-specific constraints for user deletion.
      */
     private void validateManagerDeletionRules(User actor, User target) {
         if (!target.isBasicUser() || isDifferentDepartment(actor, target)) {
@@ -136,7 +136,7 @@ public class UserAuthorizationService {
     }
 
     /**
-     * Determines whether two users represent the same identity.
+     * Determines whether two users refer to the same persisted user.
      *
      * @return {@code true} if both users have the same identifier; {@code false} otherwise
      */
@@ -224,7 +224,7 @@ public class UserAuthorizationService {
     }
 
     /**
-     * Validates update rules for a basic user.
+     * Applies user-specific constraints for user update.
      */
     private void validateBasicUserUpdateRules(UpdateIntent intent) {
         if (!intent.self()) {
@@ -241,7 +241,7 @@ public class UserAuthorizationService {
     }
 
     /**
-     * Validates update rules for a manager.
+     * Applies manager-specific constraints for user update.
      */
     private void validateManagerUpdateRules(User actor, User target, UpdateIntent intent) {
 
@@ -273,7 +273,7 @@ public class UserAuthorizationService {
     }
 
     /**
-     * Validates update rules for an administrator.
+     * Applies admin-specific constraints for user update.
      */
     private void validateAdminUpdateRules(User target, UpdateIntent intent) {
         if (intent.self() && intent.roleChangeRequested()) {

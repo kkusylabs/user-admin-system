@@ -50,4 +50,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return the number of active users with the specified role
      */
     long countByRoleAndActiveTrue(Role role);
+
+    /**
+     * Checks whether any users belong to the given department.
+     *
+     * @param departmentId the department ID to check
+     * @return true if the department has at least one user; false otherwise
+     */
+    boolean existsByDepartmentId(Long departmentId);
 }
