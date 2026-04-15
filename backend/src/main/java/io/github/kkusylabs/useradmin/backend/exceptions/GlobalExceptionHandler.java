@@ -58,7 +58,42 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handles cases where a username is already in use.
+     * Handles {@link DepartmentAlreadyExistsException} and returns a conflict response.
+     * <p>
+     * This method is invoked when a request attempts to create or update a department
+     * with a name that already exists. It returns a {@link ProblemDetail} with an
+     * HTTP 409 (Conflict) status and a descriptive error message.
+     * </p>
+     *
+     * @param ex the exception indicating the department name is already in use
+     * @return a {@link ProblemDetail} describing the conflict error
+     */
+    @ExceptionHandler(DepartmentAlreadyExistsException.class)
+    public ProblemDetail handleDepartmentAlreadyExistsException(DepartmentAlreadyExistsException ex) {
+        return createProblem(
+                HttpStatus.CONFLICT,
+                "Department Already Exists",
+                ex.getMessage()
+        );
+    }
+
+    /**
+     * Handles cases where a department cannot be deleted because it still has users.
+     *
+     * @param ex the exception
+     * @return problem detail with HTTP 409 status
+     */
+    @ExceptionHandler(DepartmentNotEmptyException.class)
+    public ProblemDetail handleDepartmentNotEmptyException(DepartmentNotEmptyException ex) {
+        return createProblem(
+                HttpStatus.CONFLICT,
+                "Department Not Empty",
+                ex.getMessage()
+        );
+    }
+
+    /**
+     * Handles cases where a department name is already in use.
      *
      * @param ex the exception
      * @return problem detail with HTTP 409 status
