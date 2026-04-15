@@ -30,4 +30,13 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
      *         {@code false} otherwise
      */
     boolean existsByName(String name);
+
+    /**
+     * Checks whether a department exists with the given name excluding the specified ID.
+     *
+     * @param name the department name to check
+     * @param id the department ID to exclude
+     * @return true if another department with the same name exists; false otherwise
+     */
+    boolean existsByNameAndIdNot(String name, Long id);
 }
