@@ -5,20 +5,18 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
 /**
- * Request payload for updating an existing user.
- * <p>
- * All fields are optional. Any field left {@code null} is treated as unchanged.
+ * Request payload for updating a user.
  *
- * <h3>Fields</h3>
- * <ul>
- *     <li><b>fullName</b> – updated display name</li>
- *     <li><b>email</b> – updated email address, if provided</li>
- *     <li><b>phone</b> – updated phone number</li>
- *     <li><b>jobTitle</b> – updated job title</li>
- *     <li><b>active</b> – updated active state</li>
- *     <li><b>departmentId</b> – updated department identifier</li>
- *     <li><b>role</b> – updated role</li>
- * </ul>
+ * <p>All fields are optional. {@code null} values are treated as unchanged.</p>
+ *
+ * @param fullName     updated display name
+ * @param email        updated email address (must be valid if provided)
+ * @param phone        updated phone number
+ * @param jobTitle     updated job title
+ * @param active       updated active state
+ * @param departmentId updated department identifier
+ * @param role         updated role
+ * @author kkusy
  */
 public record UpdateUserRequest(
         @Size(max = 100)
@@ -39,4 +37,5 @@ public record UpdateUserRequest(
         Long departmentId,
 
         Role role
-) {}
+) {
+}

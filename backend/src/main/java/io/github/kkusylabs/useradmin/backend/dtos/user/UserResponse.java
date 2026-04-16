@@ -1,24 +1,21 @@
 package io.github.kkusylabs.useradmin.backend.dtos.user;
+
 import io.github.kkusylabs.useradmin.backend.models.Role;
 
 /**
  * Response payload representing a user.
- * <p>
- * Contains user identity, profile, and organizational information.
  *
- * <h3>Fields</h3>
- * <ul>
- *     <li><b>id</b> – unique identifier of the user</li>
- *     <li><b>username</b> – username used for login</li>
- *     <li><b>fullName</b> – user's full display name</li>
- *     <li><b>email</b> – email address, if provided</li>
- *     <li><b>phone</b> – phone number, if provided</li>
- *     <li><b>jobTitle</b> – user's job title, if provided</li>
- *     <li><b>active</b> – whether the user is active</li>
- *     <li><b>role</b> – role assigned to the user</li>
- *     <li><b>departmentId</b> – identifier of the user's department</li>
- *     <li><b>departmentName</b> – name of the user's department</li>
- * </ul>
+ * @param id             the unique identifier of the user
+ * @param username       the username used for login
+ * @param fullName       the user's full display name
+ * @param email          the user's email address (if provided)
+ * @param phone          the user's phone number (if provided)
+ * @param jobTitle       the user's job title (if provided)
+ * @param active         whether the user is active
+ * @param role           the role assigned to the user
+ * @param departmentId   the identifier of the user's department
+ * @param departmentName the name of the user's department
+ * @author kkusy
  */
 public record UserResponse(
         Long id,
@@ -31,4 +28,5 @@ public record UserResponse(
         Role role,
         Long departmentId,
         String departmentName
-) {}
+) {
+}

@@ -4,23 +4,18 @@ import io.github.kkusylabs.useradmin.backend.models.Role;
 import jakarta.validation.constraints.*;
 
 /**
- * Request payload for creating a new user.
- * <p>
- * This request contains the necessary identity, authentication, and profile
- * information required to create a {@code User}.
+ * Request payload for creating a user.
  *
- * <h3>Fields</h3>
- * <ul>
- *     <li><b>username</b> – unique username used for login</li>
- *     <li><b>password</b> – plain-text password (will be hashed before storage)</li>
- *     <li><b>fullName</b> – user's full display name</li>
- *     <li><b>email</b> – unique email address</li>
- *     <li><b>phone</b> – phone number</li>
- *     <li><b>jobTitle</b> – user's job title</li>
- *     <li><b>active</b> – whether the user is active upon creation</li>
- *     <li><b>departmentId</b> – identifier of the associated department</li>
- *     <li><b>role</b> – role assigned to the user</li>
- * </ul>
+ * @param username     unique username used for login (alphanumeric, '.', '_', '-')
+ * @param password     plain-text password (will be hashed before storage; 8–100 characters)
+ * @param fullName     user's full display name
+ * @param email        user's email address (must be unique if provided)
+ * @param phone        user's phone number
+ * @param jobTitle     user's job title
+ * @param active       whether the user is active upon creation
+ * @param departmentId identifier of the associated department
+ * @param role         role assigned to the user
+ * @author kkusy
  */
 public record CreateUserRequest(
         @NotBlank
