@@ -1,4 +1,4 @@
-package io.github.kkusylabs.useradmin.backend.dtos;
+package io.github.kkusylabs.useradmin.backend.dtos.department;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

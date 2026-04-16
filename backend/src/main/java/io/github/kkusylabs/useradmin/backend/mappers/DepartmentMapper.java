@@ -1,6 +1,8 @@
 package io.github.kkusylabs.useradmin.backend.mappers;
 
-import io.github.kkusylabs.useradmin.backend.dtos.*;
+import io.github.kkusylabs.useradmin.backend.dtos.department.CreateDepartmentRequest;
+import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentResponse;
+import io.github.kkusylabs.useradmin.backend.dtos.department.UpdateDepartmentRequest;
 import io.github.kkusylabs.useradmin.backend.models.Department;
 import org.springframework.stereotype.Component;
 

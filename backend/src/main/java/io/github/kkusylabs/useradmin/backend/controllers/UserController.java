@@ -1,9 +1,9 @@
 package io.github.kkusylabs.useradmin.backend.controllers;
 
-import io.github.kkusylabs.useradmin.backend.dtos.CreateUserRequest;
-import io.github.kkusylabs.useradmin.backend.dtos.UpdateUserRequest;
-import io.github.kkusylabs.useradmin.backend.dtos.UserResponse;
-import io.github.kkusylabs.useradmin.backend.services.UserService;
+import io.github.kkusylabs.useradmin.backend.dtos.user.CreateUserRequest;
+import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserRequest;
+import io.github.kkusylabs.useradmin.backend.dtos.user.UserResponse;
+import io.github.kkusylabs.useradmin.backend.services.user.UserService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

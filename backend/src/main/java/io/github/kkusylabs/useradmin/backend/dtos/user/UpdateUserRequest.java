@@ -1,9 +1,7 @@
-package io.github.kkusylabs.useradmin.backend.dtos;
+package io.github.kkusylabs.useradmin.backend.dtos.user;
 
 import io.github.kkusylabs.useradmin.backend.models.Role;
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**

@@ -1,10 +1,9 @@
 package io.github.kkusylabs.useradmin.backend.mappers;
 
-import io.github.kkusylabs.useradmin.backend.dtos.CreateUserRequest;
-import io.github.kkusylabs.useradmin.backend.dtos.UpdateUserRequest;
-import io.github.kkusylabs.useradmin.backend.dtos.UserResponse;
+import io.github.kkusylabs.useradmin.backend.dtos.user.CreateUserRequest;
+import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserRequest;
+import io.github.kkusylabs.useradmin.backend.dtos.user.UserResponse;
 import io.github.kkusylabs.useradmin.backend.models.Department;
-import io.github.kkusylabs.useradmin.backend.models.Role;
 import io.github.kkusylabs.useradmin.backend.models.User;
 import io.github.kkusylabs.useradmin.backend.util.StringUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;

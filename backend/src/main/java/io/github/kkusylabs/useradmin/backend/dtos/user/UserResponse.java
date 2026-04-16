@@ -1,4 +1,4 @@
-package io.github.kkusylabs.useradmin.backend.dtos;
+package io.github.kkusylabs.useradmin.backend.dtos.user;
 import io.github.kkusylabs.useradmin.backend.models.Role;
 
 /**

@@ -1,7 +1,7 @@
-package io.github.kkusylabs.useradmin.backend.services;
+package io.github.kkusylabs.useradmin.backend.services.user;
 
-import io.github.kkusylabs.useradmin.backend.dtos.UpdateUserRequest;
-import io.github.kkusylabs.useradmin.backend.exceptions.InsufficientPermissionsException;
+import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserRequest;
+import io.github.kkusylabs.useradmin.backend.exceptions.security.InsufficientPermissionsException;
 import io.github.kkusylabs.useradmin.backend.models.Department;
 import io.github.kkusylabs.useradmin.backend.models.Role;
 import io.github.kkusylabs.useradmin.backend.models.User;

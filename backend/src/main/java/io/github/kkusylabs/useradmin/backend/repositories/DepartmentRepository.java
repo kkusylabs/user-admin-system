@@ -22,21 +22,7 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
      */
     Optional<Department> findByName(String name);
 
-    /**
-     * Checks whether a department with the given name already exists.
-     *
-     * @param name the department name to check
-     * @return {@code true} if a department with the given name exists;
-     *         {@code false} otherwise
-     */
-    boolean existsByName(String name);
+    boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
 
-    /**
-     * Checks whether a department exists with the given name excluding the specified ID.
-     *
-     * @param name the department name to check
-     * @param id the department ID to exclude
-     * @return true if another department with the same name exists; false otherwise
-     */
-    boolean existsByNameAndIdNot(String name, Long id);
+    boolean existsByNameIgnoreCase(String name);
 }

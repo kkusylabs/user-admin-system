@@ -1,4 +1,4 @@
-package io.github.kkusylabs.useradmin.backend.dtos;
+package io.github.kkusylabs.useradmin.backend.dtos.department;
 
 /**
  * Response payload representing a department.
@@ -17,5 +17,6 @@ package io.github.kkusylabs.useradmin.backend.dtos;
  */
 public record DepartmentResponse(
         Long id,
-        String name
+        String name,
+        DepartmentCapabilities capabilities
 ) {}

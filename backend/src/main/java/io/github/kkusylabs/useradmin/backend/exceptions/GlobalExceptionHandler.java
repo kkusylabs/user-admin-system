@@ -1,5 +1,6 @@
 package io.github.kkusylabs.useradmin.backend.exceptions;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -10,131 +11,68 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
+import java.net.URI;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
- * Global exception handler for REST controllers.
- * <p>
- * Translates application-specific exceptions into HTTP responses using
- * {@link ProblemDetail}.
- * </p>
+ * Centralized exception handler for REST controllers.
+ *
+ * <p>Translates application and validation exceptions into consistent
+ * HTTP responses using {@link ProblemDetail}. Ensures that all errors
+ * returned by the API follow a predictable structure.</p>
+ *
+ * <p>Handled exception types include:</p>
+ * <ul>
+ *     <li>{@link ApiException} – domain/business errors with explicit HTTP semantics</li>
+ *     <li>{@link MethodArgumentNotValidException} – validation errors for request bodies</li>
+ *     <li>{@link HandlerMethodValidationException} – validation errors for request parameters</li>
+ *     <li>{@link ConstraintViolationException} – constraint violations outside MVC binding</li>
+ *     <li>{@link Exception} – fallback for unexpected errors</li>
+ * </ul>
+ *
+ * <p>Each response includes a stable {@code code} for programmatic handling,
+ * along with optional validation error details when applicable.</p>
  *
  * @author kkusy
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /**
-     * Handles cases where a requested user cannot be found.
-     *
-     * @param ex the exception
-     * @return problem detail with HTTP 404 status
+     * Handles domain-specific exceptions.
      */
-    @ExceptionHandler(UserNotFoundException.class)
-    public ProblemDetail handleUserNotFound(UserNotFoundException ex) {
-        return createProblem(
-                HttpStatus.NOT_FOUND,
-                "Resource Not Found",
-                ex.getMessage()
+    @ExceptionHandler(ApiException.class)
+    public ProblemDetail handleApiException(ApiException ex, HttpServletRequest request) {
+        ProblemDetail problem = createProblem(
+                ex.getStatus(),
+                ex.getStatus().getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
         );
+        problem.setProperty("code", ex.getCode());
+        return problem;
     }
 
     /**
-     * Handles cases where a requested department cannot be found.
-     *
-     * @param ex the exception
-     * @return problem detail with HTTP 404 status
-     */
-    @ExceptionHandler(DepartmentNotFoundException.class)
-    public ProblemDetail handleDepartmentNotFound(DepartmentNotFoundException ex) {
-        return createProblem(
-                HttpStatus.NOT_FOUND,
-                "Resource Not Found",
-                ex.getMessage()
-        );
-    }
-
-    /**
-     * Handles {@link DepartmentAlreadyExistsException} and returns a conflict response.
-     * <p>
-     * This method is invoked when a request attempts to create or update a department
-     * with a name that already exists. It returns a {@link ProblemDetail} with an
-     * HTTP 409 (Conflict) status and a descriptive error message.
-     * </p>
-     *
-     * @param ex the exception indicating the department name is already in use
-     * @return a {@link ProblemDetail} describing the conflict error
-     */
-    @ExceptionHandler(DepartmentAlreadyExistsException.class)
-    public ProblemDetail handleDepartmentAlreadyExistsException(DepartmentAlreadyExistsException ex) {
-        return createProblem(
-                HttpStatus.CONFLICT,
-                "Department Already Exists",
-                ex.getMessage()
-        );
-    }
-
-    /**
-     * Handles cases where a department cannot be deleted because it still has users.
-     *
-     * @param ex the exception
-     * @return problem detail with HTTP 409 status
-     */
-    @ExceptionHandler(DepartmentNotEmptyException.class)
-    public ProblemDetail handleDepartmentNotEmptyException(DepartmentNotEmptyException ex) {
-        return createProblem(
-                HttpStatus.CONFLICT,
-                "Department Not Empty",
-                ex.getMessage()
-        );
-    }
-
-    /**
-     * Handles cases where a department name is already in use.
-     *
-     * @param ex the exception
-     * @return problem detail with HTTP 409 status
-     */
-    @ExceptionHandler(UsernameAlreadyExistsException.class)
-    public ProblemDetail handleUsernameAlreadyExists(UsernameAlreadyExistsException ex) {
-        return createProblem(
-                HttpStatus.CONFLICT,
-                "Username Already Exists",
-                ex.getMessage()
-        );
-    }
-
-    /**
-     * Handles cases where a user attempts to perform an operation
-     * without sufficient permissions.
-     *
-     * @param ex the exception
-     * @return problem detail with HTTP 403 status
-     */
-    @ExceptionHandler(InsufficientPermissionsException.class)
-    public ProblemDetail handleInsufficientPermissions(InsufficientPermissionsException ex) {
-        return createProblem(
-                HttpStatus.FORBIDDEN,
-                "Forbidden",
-                ex.getMessage()
-        );
-    }
-
-    /**
-     * Handles validation failures for request bodies annotated with {@code @Valid}.
-     *
-     * @param ex the exception
-     * @return problem detail with HTTP 400 status and field-level validation errors
+     * Handles validation errors for {@code @Valid @RequestBody}.
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ProblemDetail handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
+    public ProblemDetail handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request
+    ) {
         ProblemDetail problem = createProblem(
                 HttpStatus.BAD_REQUEST,
                 "Validation Failed",
-                "One or more request fields are invalid."
+                "One or more request fields are invalid.",
+                request.getRequestURI()
         );
 
         Map<String, String> errors = new LinkedHashMap<>();
@@ -142,22 +80,56 @@ public class GlobalExceptionHandler {
             errors.putIfAbsent(error.getField(), error.getDefaultMessage());
         }
 
+        problem.setProperty("code", "VALIDATION_ERROR");
         problem.setProperty("errors", errors);
         return problem;
     }
 
     /**
-     * Handles validation failures for request parameters, path variables, and similar inputs.
-     *
-     * @param ex the exception
-     * @return problem detail with HTTP 400 status and validation error details
+     * Handles validation errors for controller method parameters
+     * (e.g. {@code @RequestParam}, {@code @PathVariable}).
      */
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ProblemDetail handleConstraintViolation(ConstraintViolationException ex) {
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ProblemDetail handleHandlerMethodValidation(
+            HandlerMethodValidationException ex,
+            HttpServletRequest request
+    ) {
         ProblemDetail problem = createProblem(
                 HttpStatus.BAD_REQUEST,
                 "Validation Failed",
-                "One or more request parameters are invalid."
+                "One or more request parameters are invalid.",
+                request.getRequestURI()
+        );
+
+        Map<String, String> errors = new LinkedHashMap<>();
+
+        ex.getParameterValidationResults().forEach(result -> {
+            String name = Optional.ofNullable(result.getMethodParameter().getParameterName())
+                    .orElse("param");
+
+            result.getResolvableErrors().forEach(error ->
+                    errors.putIfAbsent(name, error.getDefaultMessage())
+            );
+        });
+
+        problem.setProperty("code", "VALIDATION_ERROR");
+        problem.setProperty("errors", errors);
+        return problem;
+    }
+
+    /**
+     * Handles constraint violations outside standard request binding.
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ProblemDetail handleConstraintViolation(
+            ConstraintViolationException ex,
+            HttpServletRequest request
+    ) {
+        ProblemDetail problem = createProblem(
+                HttpStatus.BAD_REQUEST,
+                "Validation Failed",
+                "One or more constraints were violated.",
+                request.getRequestURI()
         );
 
         Map<String, String> errors = new LinkedHashMap<>();
@@ -165,41 +137,41 @@ public class GlobalExceptionHandler {
             errors.putIfAbsent(violation.getPropertyPath().toString(), violation.getMessage());
         }
 
+        problem.setProperty("code", "VALIDATION_ERROR");
         problem.setProperty("errors", errors);
         return problem;
     }
 
     /**
-     * Handles unexpected exceptions not matched by more specific handlers.
-     *
-     * @param ex the exception
-     * @return problem detail with HTTP 500 status
+     * Handles unexpected exceptions.
      */
     @ExceptionHandler(Exception.class)
-    public ProblemDetail handleGeneric(Exception ex) {
+    public ProblemDetail handleGeneric(Exception ex, HttpServletRequest request) {
         log.error("Unhandled exception", ex);
-        return createProblem(
+
+        ProblemDetail problem = createProblem(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Internal Server Error",
-                "An unexpected error occurred."
+                "An unexpected error occurred.",
+                request.getRequestURI()
         );
+        problem.setProperty("code", "INTERNAL_ERROR");
+        return problem;
     }
 
     /**
-     * Creates a {@link ProblemDetail} instance with the given status, title, and detail message.
-     *
-     * <p>This is a convenience method used to standardize error responses across the application.
-     * It ensures that all exceptions are converted into a consistent RFC 9457-style problem response.</p>
-     *
-     * @param status the HTTP status to associate with the problem
-     * @param title  a short, human-readable summary of the problem
-     * @param detail a detailed explanation of the problem
-     * @return a populated {@link ProblemDetail} instance
+     * Creates a {@link ProblemDetail} with common fields.
      */
-    private ProblemDetail createProblem(HttpStatus status, String title, String detail) {
-        ProblemDetail problem = ProblemDetail.forStatus(status);
+    private ProblemDetail createProblem(
+            HttpStatus status,
+            String title,
+            String detail,
+            String path
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
         problem.setTitle(title);
-        problem.setDetail(detail);
+        problem.setInstance(URI.create(path));
+        problem.setProperty("timestamp", Instant.now());
         return problem;
     }
 }

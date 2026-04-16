@@ -1,12 +1,12 @@
-package io.github.kkusylabs.useradmin.backend.services;
+package io.github.kkusylabs.useradmin.backend.services.user;
 
-import io.github.kkusylabs.useradmin.backend.dtos.CreateUserRequest;
-import io.github.kkusylabs.useradmin.backend.dtos.UpdateUserRequest;
-import io.github.kkusylabs.useradmin.backend.dtos.UserResponse;
-import io.github.kkusylabs.useradmin.backend.exceptions.DepartmentNotFoundException;
-import io.github.kkusylabs.useradmin.backend.exceptions.InsufficientPermissionsException;
-import io.github.kkusylabs.useradmin.backend.exceptions.UserNotFoundException;
-import io.github.kkusylabs.useradmin.backend.exceptions.UsernameAlreadyExistsException;
+import io.github.kkusylabs.useradmin.backend.dtos.user.CreateUserRequest;
+import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserRequest;
+import io.github.kkusylabs.useradmin.backend.dtos.user.UserResponse;
+import io.github.kkusylabs.useradmin.backend.exceptions.department.DepartmentNotFoundException;
+import io.github.kkusylabs.useradmin.backend.exceptions.security.InsufficientPermissionsException;
+import io.github.kkusylabs.useradmin.backend.exceptions.user.UserNotFoundException;
+import io.github.kkusylabs.useradmin.backend.exceptions.user.UsernameAlreadyExistsException;
 import io.github.kkusylabs.useradmin.backend.mappers.UserMapper;
 import io.github.kkusylabs.useradmin.backend.models.Department;
 import io.github.kkusylabs.useradmin.backend.models.Role;
