@@ -1,7 +1,6 @@
 package io.github.kkusylabs.useradmin.backend.controllers;
 
 import io.github.kkusylabs.useradmin.backend.dtos.user.CreateUserRequest;
-import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserRequest;
 import io.github.kkusylabs.useradmin.backend.dtos.user.UserResponse;
 import io.github.kkusylabs.useradmin.backend.services.user.UserService;
 import jakarta.validation.Valid;
@@ -57,7 +56,7 @@ public class UserController {
      * @return a page of user response DTOs
      */
     @GetMapping
-    public ResponseEntity<Page<UserResponse>> findAll(Pageable pageable, @AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<Page<UserResponse>> findAll(Pageable pageable) {
         return ResponseEntity.ok(userService.findAll(pageable));
     }
 
@@ -68,25 +67,8 @@ public class UserController {
      * @return the user response DTO
      */
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> findById(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<UserResponse> findById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.findById(id));
-    }
-
-    /**
-     * Updates an existing user.
-     *
-     * @param id      the identifier of the user to update
-     * @param request the requested changes
-     * @param jwt     the authenticated user's JWT
-     * @return the updated user
-     */
-    @PutMapping("/{id}")
-    public ResponseEntity<UserResponse> updateById(@PathVariable Long id,
-                                                   @Valid @RequestBody UpdateUserRequest request,
-                                                   @AuthenticationPrincipal Jwt jwt) {
-        Long actorId = jwt.getClaim("userId");
-        UserResponse updatedUser = userService.updateById(id, request, actorId);
-        return ResponseEntity.ok(updatedUser);
     }
 
     /**

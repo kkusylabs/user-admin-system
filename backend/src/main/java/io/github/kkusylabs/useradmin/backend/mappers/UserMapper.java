@@ -5,8 +5,6 @@ import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserRequest;
 import io.github.kkusylabs.useradmin.backend.dtos.user.UserResponse;
 import io.github.kkusylabs.useradmin.backend.models.Department;
 import io.github.kkusylabs.useradmin.backend.models.User;
-import io.github.kkusylabs.useradmin.backend.util.StringUtils;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -26,18 +24,6 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public final class UserMapper {
-
-    private final PasswordEncoder passwordEncoder;
-
-    /**
-     * Creates a new mapper instance.
-     *
-     * @param passwordEncoder encoder used to hash user passwords during entity creation
-     */
-    public UserMapper(PasswordEncoder passwordEncoder) {
-        this.passwordEncoder = passwordEncoder;
-    }
-
     /**
      * Creates a new {@link User} entity from a creation request.
      *
@@ -51,10 +37,9 @@ public final class UserMapper {
      * @param department the resolved department for the new user, or {@code null}
      * @return a new user entity populated from the request
      */
-    public User toEntity(CreateUserRequest request, Department department) {
+    public User fromCreateRequest(CreateUserRequest request, Department department) {
         User user = new User();
         user.setUsername(request.username());
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setFullName(request.fullName());
         user.setEmail(request.email());
         user.setPhone(request.phone());

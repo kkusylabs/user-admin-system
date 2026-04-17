@@ -21,4 +21,14 @@ public class InsufficientPermissionsException extends ForbiddenException {
                 "You do not have permission to perform this action"
         );
     }
+
+    /**
+     * Creates a new exception for insufficient permissions.
+     */
+    public InsufficientPermissionsException(String message) {
+        super(
+                "INSUFFICIENT_PERMISSIONS",
+                message
+        );
+    }
 }

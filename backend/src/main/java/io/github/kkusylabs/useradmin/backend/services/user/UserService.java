@@ -1,10 +1,10 @@
 package io.github.kkusylabs.useradmin.backend.services.user;
 
 import io.github.kkusylabs.useradmin.backend.dtos.user.CreateUserRequest;
-import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserRequest;
 import io.github.kkusylabs.useradmin.backend.dtos.user.UserResponse;
 import io.github.kkusylabs.useradmin.backend.exceptions.department.DepartmentNotFoundException;
 import io.github.kkusylabs.useradmin.backend.exceptions.security.InsufficientPermissionsException;
+import io.github.kkusylabs.useradmin.backend.exceptions.user.EmailAlreadyExistsException;
 import io.github.kkusylabs.useradmin.backend.exceptions.user.UserNotFoundException;
 import io.github.kkusylabs.useradmin.backend.exceptions.user.UsernameAlreadyExistsException;
 import io.github.kkusylabs.useradmin.backend.mappers.UserMapper;
@@ -13,9 +13,10 @@ import io.github.kkusylabs.useradmin.backend.models.Role;
 import io.github.kkusylabs.useradmin.backend.models.User;
 import io.github.kkusylabs.useradmin.backend.repositories.DepartmentRepository;
 import io.github.kkusylabs.useradmin.backend.repositories.UserRepository;
-import io.github.kkusylabs.useradmin.backend.util.StringUtils;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +48,7 @@ public class UserService {
     private final DepartmentRepository departmentRepository;
     private final UserMapper userMapper;
     private final UserAuthorizationService userAuthorizationService;
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * Creates a new service instance.
@@ -57,11 +59,12 @@ public class UserService {
     public UserService(UserRepository userRepository,
                        DepartmentRepository departmentRepository,
                        UserMapper userMapper,
-                       UserAuthorizationService userAuthorizationService) {
+                       UserAuthorizationService userAuthorizationService, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.departmentRepository = departmentRepository;
         this.userMapper = userMapper;
         this.userAuthorizationService = userAuthorizationService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -88,36 +91,20 @@ public class UserService {
     @Transactional
     public UserResponse createUser(CreateUserRequest request, Long actorId) {
         User actor = getActor(actorId);
-        CreateUserRequest sanitized = sanitize(request);
 
-        if (userRepository.existsByUsername(sanitized.username())) {
-            throw new UsernameAlreadyExistsException(sanitized.username());
+        if (userRepository.existsByUsername(request.username())) {
+            throw new UsernameAlreadyExistsException(request.username());
         }
 
-        Department requestedDepartment = resolveRequestedDepartment(sanitized.departmentId());
-        userAuthorizationService.validateCreation(actor, sanitized.role(), requestedDepartment);
-        User user = userMapper.toEntity(sanitized, requestedDepartment);
-        return userMapper.toResponse(userRepository.save(user), requestedDepartment);
-    }
+        if (userRepository.existsByEmail(request.email())) {
+            throw new EmailAlreadyExistsException(request.email());
+        }
 
-    /**
-     * Sanitizes a create user request by normalizing string fields and applying default values.
-     *
-     * @param request the original request
-     * @return a sanitized request with normalized values
-     */
-    private CreateUserRequest sanitize(CreateUserRequest request) {
-        return new CreateUserRequest(
-                StringUtils.normalizeUsername(request.username()),
-                request.password(),
-                request.fullName().trim(),
-                StringUtils.normalizeEmail(request.email()),
-                StringUtils.normalizeOptional(request.phone()),
-                StringUtils.normalizeOptional(request.jobTitle()),
-                request.active() != null ? request.active() : Boolean.TRUE,
-                request.departmentId(),
-                request.role() != null ? request.role() : Role.USER
-        );
+        Department department = getDepartment(request.departmentId());
+        userAuthorizationService.validateCreation(actor, request.role(), department);
+        User user = userMapper.fromCreateRequest(request, department);
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        return userMapper.toResponse(userRepository.save(user), department);
     }
 
     /**
@@ -179,60 +166,13 @@ public class UserService {
     }
 
     /**
-     * Updates an existing user.
-     *
-     * @param targetUserId the identifier of the user to update
-     * @param request the update request
-     * @param actorId the identifier of the authenticated user
-     * @return the updated user response DTO
-     * @throws UserNotFoundException if the actor or target user cannot be found
-     * @throws DepartmentNotFoundException if the requested department does not exist
-     * @throws InsufficientPermissionsException if the actor is not permitted to perform the update
-     */
-    @Transactional
-    public UserResponse updateById(Long targetUserId, UpdateUserRequest request, Long actorId) {
-        User actor = getActor(actorId);
-
-        User target = userRepository.findById(targetUserId)
-                .orElseThrow(() -> new UserNotFoundException(targetUserId));
-
-        UpdateUserRequest sanitized = sanitize(request);
-        Department requestedDepartment = resolveRequestedDepartment(sanitized.departmentId());
-        userAuthorizationService.validateUpdate(actor, target, sanitized, requestedDepartment);
-        userMapper.updateEntity(target, sanitized, requestedDepartment);
-        User savedUser = userRepository.save(target);
-        return userMapper.toResponse(savedUser, savedUser.getDepartment());
-    }
-
-    /**
-     * Sanitizes an update user request by normalizing non-null fields.
-     * <p>
-     * Null values are preserved to indicate no change.
-     * </p>
-     *
-     * @param request the original request
-     * @return a sanitized request with normalized values
-     */
-    private UpdateUserRequest sanitize(UpdateUserRequest request) {
-        return new UpdateUserRequest(
-                StringUtils.normalizeOptional(request.fullName()),
-                StringUtils.normalizeEmail(request.email()),
-                StringUtils.normalizeOptional(request.phone()),
-                StringUtils.normalizeOptional(request.jobTitle()),
-                request.active(),
-                request.departmentId(),
-                request.role()
-        );
-    }
-
-    /**
      * Resolves a department identifier to a {@link Department}.
      *
      * @param departmentId the department identifier, or {@code null}
      * @return the resolved department, or {@code null} if no department was requested
      * @throws DepartmentNotFoundException if the identifier does not correspond to an existing department
      */
-    private Department resolveRequestedDepartment(Long departmentId) {
+    private Department getDepartment(Long departmentId) {
         if (departmentId == null) {
             return null;
         }

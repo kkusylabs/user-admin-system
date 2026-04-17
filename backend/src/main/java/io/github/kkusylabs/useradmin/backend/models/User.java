@@ -45,9 +45,9 @@ public class User extends AuditableEntity {
     private String fullName;
 
     /**
-     * The user's email address, if provided.
+     * The user's email address.
      */
-    @Column
+    @Column(nullable = false, unique = true)
     private String email;
 
     /**

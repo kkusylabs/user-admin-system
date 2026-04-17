@@ -1,34 +1,40 @@
 package io.github.kkusylabs.useradmin.backend.mappers;
 
-import io.github.kkusylabs.useradmin.backend.dtos.department.CreateDepartmentRequest;
 import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentResponse;
-import io.github.kkusylabs.useradmin.backend.dtos.department.UpdateDepartmentRequest;
 import io.github.kkusylabs.useradmin.backend.models.Department;
+import io.github.kkusylabs.useradmin.backend.models.User;
+import io.github.kkusylabs.useradmin.backend.services.department.DepartmentAuthorizationService;
 import org.springframework.stereotype.Component;
 
 /**
- * Maps between {@link Department} entities and department-related DTOs.
- * <p>
- * This class provides conversion methods for:
- * </p>
- * <ul>
- *   <li>Creating a {@link Department} entity from a {@link CreateDepartmentRequest}</li>
- *   <li>Updating an existing {@link Department} using an {@link UpdateDepartmentRequest}</li>
- *   <li>Converting a {@link Department} entity to a {@link DepartmentResponse}</li>
- * </ul>
+ * Maps {@link Department} entities to department-related DTOs.
+ *
+ * <p>Includes authorization-aware mapping for response objects.</p>
+ *
+ * @author kkusy
  */
 @Component
 public class DepartmentMapper {
 
+    private final DepartmentAuthorizationService authorizationService;
+
+    public DepartmentMapper(DepartmentAuthorizationService authorizationService) {
+        this.authorizationService = authorizationService;
+    }
+
     /**
-     * Converts a {@link Department} entity to a {@link DepartmentResponse}.
+     * Converts a department to a response DTO, including capabilities
+     * for the given actor.
      *
-     * @param department the department entity to convert
-     * @return a response DTO representing the department
+     * @param department the department to convert
+     * @param actor      the current user (used to determine capabilities)
+     * @return the mapped response
      */
-    public DepartmentResponse toResponse(Department department) {
+    public DepartmentResponse toResponse(Department department, User actor) {
         return new DepartmentResponse(
                 department.getId(),
-                department.getName());
+                department.getName(),
+                authorizationService.getCapabilities(actor, department)
+        );
     }
 }

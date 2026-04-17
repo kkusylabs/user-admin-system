@@ -1,6 +1,7 @@
 package io.github.kkusylabs.useradmin.backend.dtos.user;
 
 import io.github.kkusylabs.useradmin.backend.models.Role;
+import io.github.kkusylabs.useradmin.backend.utils.StringNormalizer;
 import jakarta.validation.constraints.*;
 
 /**
@@ -9,7 +10,7 @@ import jakarta.validation.constraints.*;
  * @param username     unique username used for login (alphanumeric, '.', '_', '-')
  * @param password     plain-text password (will be hashed before storage; 8–100 characters)
  * @param fullName     user's full display name
- * @param email        user's email address (must be unique if provided)
+ * @param email        user's email address (must be unique)
  * @param phone        user's phone number
  * @param jobTitle     user's job title
  * @param active       whether the user is active upon creation
@@ -31,11 +32,12 @@ public record CreateUserRequest(
         @Size(max = 100)
         String fullName,
 
+        @NotBlank
         @Email
         @Size(max = 255)
         String email,
 
-        @Size(max = 30)
+        @Pattern(regexp = "^\\+?[0-9]{7,15}$")
         String phone,
 
         @Size(max = 100)
@@ -48,4 +50,14 @@ public record CreateUserRequest(
 
         Role role
 ) {
+    public CreateUserRequest {
+        username = StringNormalizer.normalizeUsername(username);
+        fullName = StringNormalizer.trim(fullName);
+        email = StringNormalizer.normalizeEmail(email);
+        phone = StringNormalizer.normalizePhone(phone);
+        jobTitle = StringNormalizer.trimToNull(jobTitle);
+
+        role = (role == null) ? Role.USER : role;
+        active = (active == null) ? Boolean.TRUE : active;
+    }
 }

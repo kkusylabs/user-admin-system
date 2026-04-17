@@ -1,6 +1,7 @@
 package io.github.kkusylabs.useradmin.backend.dtos.user;
 
 import io.github.kkusylabs.useradmin.backend.models.Role;
+import io.github.kkusylabs.useradmin.backend.utils.StringNormalizer;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
@@ -38,4 +39,10 @@ public record UpdateUserRequest(
 
         Role role
 ) {
+        public UpdateUserRequest {
+                fullName = StringNormalizer.trim(fullName);
+                phone = StringNormalizer.trim(phone);
+                jobTitle = StringNormalizer.trim(jobTitle);
+                email = StringNormalizer.trim(email);
+        }
 }
