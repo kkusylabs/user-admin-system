@@ -1,9 +1,8 @@
-package io.github.kkusylabs.useradmin.backend.mappers;
+package io.github.kkusylabs.useradmin.backend.services.department;
 
 import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentResponse;
 import io.github.kkusylabs.useradmin.backend.models.Department;
 import io.github.kkusylabs.useradmin.backend.models.User;
-import io.github.kkusylabs.useradmin.backend.services.department.DepartmentAuthorizationService;
 import org.springframework.stereotype.Component;
 
 /**

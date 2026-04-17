@@ -6,7 +6,6 @@ import io.github.kkusylabs.useradmin.backend.dtos.department.UpdateDepartmentReq
 import io.github.kkusylabs.useradmin.backend.exceptions.department.DepartmentNameAlreadyExistsException;
 import io.github.kkusylabs.useradmin.backend.exceptions.department.DepartmentNotEmptyException;
 import io.github.kkusylabs.useradmin.backend.exceptions.department.DepartmentNotFoundException;
-import io.github.kkusylabs.useradmin.backend.mappers.DepartmentMapper;
 import io.github.kkusylabs.useradmin.backend.models.Department;
 import io.github.kkusylabs.useradmin.backend.models.User;
 import io.github.kkusylabs.useradmin.backend.repositories.DepartmentRepository;
@@ -45,7 +44,7 @@ public class DepartmentService {
         Department department = new Department();
         department.setName(name);
         Department saved = departmentRepository.save(department);
-        return departmentMapper.toResponse(department, actor);
+        return departmentMapper.toResponse(saved, actor);
     }
 
     @Transactional

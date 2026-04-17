@@ -1,4 +1,4 @@
-package io.github.kkusylabs.useradmin.backend.mappers;
+package io.github.kkusylabs.useradmin.backend.services.user;
 
 import io.github.kkusylabs.useradmin.backend.dtos.user.CreateUserRequest;
 import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserRequest;

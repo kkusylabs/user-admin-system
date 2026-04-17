@@ -7,7 +7,6 @@ import io.github.kkusylabs.useradmin.backend.exceptions.security.InsufficientPer
 import io.github.kkusylabs.useradmin.backend.exceptions.user.EmailAlreadyExistsException;
 import io.github.kkusylabs.useradmin.backend.exceptions.user.UserNotFoundException;
 import io.github.kkusylabs.useradmin.backend.exceptions.user.UsernameAlreadyExistsException;
-import io.github.kkusylabs.useradmin.backend.mappers.UserMapper;
 import io.github.kkusylabs.useradmin.backend.models.Department;
 import io.github.kkusylabs.useradmin.backend.models.Role;
 import io.github.kkusylabs.useradmin.backend.models.User;
