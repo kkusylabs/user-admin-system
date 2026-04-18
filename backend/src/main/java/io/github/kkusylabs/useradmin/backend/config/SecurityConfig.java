@@ -79,7 +79,7 @@ public class SecurityConfig {
                 )
                 .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.decoder(jwtDecoder())))
                 .addFilterAfter(activeUserFilter,
-                        org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class);;
+                        org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class);
 
         return http.build();
     }

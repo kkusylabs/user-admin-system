@@ -1,8 +1,7 @@
 package io.github.kkusylabs.useradmin.backend.services.user;
 
-import io.github.kkusylabs.useradmin.backend.dtos.user.CreateUserRequest;
-import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserRequest;
-import io.github.kkusylabs.useradmin.backend.dtos.user.UserResponse;
+import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentOption;
+import io.github.kkusylabs.useradmin.backend.dtos.user.*;
 import io.github.kkusylabs.useradmin.backend.models.Department;
 import io.github.kkusylabs.useradmin.backend.models.User;
 import org.springframework.stereotype.Component;
@@ -27,14 +26,12 @@ public final class UserMapper {
     /**
      * Creates a new {@link User} entity from a creation request.
      *
-     * <p>
-     * String fields are normalized as needed before being assigned. The password
-     * is hashed before storage. If {@code active} is not provided, it defaults
-     * to {@code true}.
-     * </p>
+     * <p>Copies fields from the request into a new entity and assigns the
+     * resolved {@link Department}. This method does not perform validation,
+     * apply defaults, or handle password encoding.</p>
      *
-     * @param request the user creation request
-     * @param department the resolved department for the new user, or {@code null}
+     * @param request     the user creation request
+     * @param department  the resolved department, or {@code null}
      * @return a new user entity populated from the request
      */
     public User fromCreateRequest(CreateUserRequest request, Department department) {
@@ -96,11 +93,25 @@ public final class UserMapper {
     /**
      * Converts a {@link User} entity into a {@link UserResponse}.
      *
-     * @param user the user entity
-     * @param department the user's department, or {@code null}
-     * @return the corresponding response DTO
+     * <p>Includes department information and authorization capabilities
+     * relative to the acting user.</p>
+     *
+     * @param user               the user entity
+     * @param updateCapabilities the caller's update permissions for the user
+     * @param deleteCapabilities the caller's delete permissions for the user
+     * @return the response DTO
      */
-    public UserResponse toResponse(User user, Department department) {
+    public UserResponse toResponse(
+            User user,
+            UpdateUserCapabilities updateCapabilities,
+            DeleteUserCapabilities deleteCapabilities
+    ) {
+        Department department = user.getDepartment();
+
+        DepartmentOption departmentOption = department == null
+                ? null
+                : new DepartmentOption(department.getId(), department.getName());
+
         return new UserResponse(
                 user.getId(),
                 user.getUsername(),
@@ -110,8 +121,10 @@ public final class UserMapper {
                 user.getJobTitle(),
                 user.isActive(),
                 user.getRole(),
-                department != null ? department.getId() : null,
-                department != null ? department.getName() : null
+                departmentOption,
+                updateCapabilities,
+                deleteCapabilities
         );
     }
+
 }

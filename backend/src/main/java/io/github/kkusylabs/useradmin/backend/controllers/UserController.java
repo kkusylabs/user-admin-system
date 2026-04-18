@@ -1,10 +1,12 @@
 package io.github.kkusylabs.useradmin.backend.controllers;
 
+import io.github.kkusylabs.useradmin.backend.dtos.common.AuthenticatedActor;
 import io.github.kkusylabs.useradmin.backend.dtos.user.CreateUserRequest;
+import io.github.kkusylabs.useradmin.backend.dtos.user.UserListResponse;
 import io.github.kkusylabs.useradmin.backend.dtos.user.UserResponse;
+import io.github.kkusylabs.useradmin.backend.security.AuthenticatedActorResolver;
 import io.github.kkusylabs.useradmin.backend.services.user.UserService;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,37 +17,44 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * REST controller for managing users.
- * <p>
- * Provides endpoints for creating users and retrieving user data.
+ *
+ * <p>Provides endpoints for creating, retrieving, and deleting users.</p>
+ *
+ * @author kkusy
  */
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
     private final UserService userService;
+    private final AuthenticatedActorResolver authenticatedActorResolver;
 
     /**
-     * Creates a new controller instance.
+     * Creates a new {@code UserController}.
      *
-     * @param userService the service used to manage users
+     * @param userService                the service used to manage users
+     * @param authenticatedActorResolver resolves the authenticated actor from a JWT
      */
-    public UserController(UserService userService) {
+    public UserController(UserService userService,
+                          AuthenticatedActorResolver authenticatedActorResolver) {
         this.userService = userService;
+        this.authenticatedActorResolver = authenticatedActorResolver;
     }
 
     /**
      * Creates a new user.
      *
      * @param request the user creation request
-     * @param jwt     the authenticated user's JWT
      * @return the created user
      */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request,
-                                                   @AuthenticationPrincipal Jwt jwt) {
-        Long actorId = jwt.getClaim("userId");
-        UserResponse createdUser = userService.createUser(request, actorId);
+    public ResponseEntity<UserResponse> createUser(
+            @Valid @RequestBody CreateUserRequest request,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        AuthenticatedActor actor = authenticatedActorResolver.fromJwt(jwt);
+        UserResponse createdUser = userService.createUser(request, actor);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
 
@@ -53,37 +62,46 @@ public class UserController {
      * Returns a paginated list of users.
      *
      * @param pageable pagination and sorting information
-     * @return a page of user response DTOs
+     * @return a paged response of users
      */
     @GetMapping
-    public ResponseEntity<Page<UserResponse>> findAll(Pageable pageable) {
-        return ResponseEntity.ok(userService.findAll(pageable));
+    public ResponseEntity<UserListResponse> findAll(
+            Pageable pageable,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        AuthenticatedActor actor = authenticatedActorResolver.fromJwt(jwt);
+        return ResponseEntity.ok(userService.findAll(pageable, actor));
     }
 
     /**
      * Returns a user by its identifier.
      *
-     * @param id the identifier of the user
-     * @return the user response DTO
+     * @param id the user identifier
+     * @return the user
      */
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.findById(id));
+    public ResponseEntity<UserResponse> findById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        AuthenticatedActor actor = authenticatedActorResolver.fromJwt(jwt);
+        return ResponseEntity.ok(userService.findById(id, actor));
     }
 
     /**
      * Deletes a user by its identifier.
      *
-     * @param id  the identifier of the user to delete
-     * @param jwt the authenticated user's JWT
+     * @param id the user identifier
      * @return an empty response with HTTP 204
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<Void> deleteById(@PathVariable Long id,
-                                           @AuthenticationPrincipal Jwt jwt) {
-        Long actorId = jwt.getClaim("userId");
-        userService.deleteById(id, actorId);
+    public ResponseEntity<Void> deleteById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        AuthenticatedActor actor = authenticatedActorResolver.fromJwt(jwt);
+        userService.deleteById(id, actor);
         return ResponseEntity.noContent().build();
     }
 }

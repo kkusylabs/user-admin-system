@@ -1,5 +1,9 @@
 package io.github.kkusylabs.useradmin.backend.services.user;
 
+import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentOption;
+import io.github.kkusylabs.useradmin.backend.dtos.user.CreateUserCapabilities;
+import io.github.kkusylabs.useradmin.backend.dtos.user.DeleteUserCapabilities;
+import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserCapabilities;
 import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserRequest;
 import io.github.kkusylabs.useradmin.backend.exceptions.security.InsufficientPermissionsException;
 import io.github.kkusylabs.useradmin.backend.models.Department;
@@ -8,20 +12,22 @@ import io.github.kkusylabs.useradmin.backend.models.User;
 import io.github.kkusylabs.useradmin.backend.repositories.UserRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
- * Service responsible for enforcing authorization rules related to {@link User} management.
- * <p>
- * This component centralizes permission checks for user creation, deletion, and updates.
- * It evaluates whether an acting user ("actor") is allowed to perform an operation on
- * a target user or resource, based on role, department, and business constraints.
- * </p>
+ * Service responsible for enforcing authorization rules for {@link User} operations.
  *
- * <p>Rules are expressed in terms of business intent rather than low-level conditions,
- * keeping authorization logic isolated from application flow.</p>
+ * <p>Centralizes permission checks and capability calculations for creating,
+ * updating, and deleting users. Rules are evaluated based on the acting user
+ * ("actor"), the target user, and business constraints such as role and department.</p>
  *
- * @author kkusy
+ * <p>This service separates authorization logic from application flow, allowing
+ * controllers and services to delegate permission decisions to a single component.</p>
+ *
+ * <p><strong>Note:</strong> Update-related authorization is currently a stub and
+ * will be implemented in a future iteration.</p>
  */
 @Component
 public class UserAuthorizationService {
@@ -38,311 +44,196 @@ public class UserAuthorizationService {
     }
 
     /**
-     * Validates whether the actor is permitted to create a user.
+     * Validates whether the actor is allowed to create a user with the given role
+     * and department.
      *
-     * <p>Rules:</p>
-     * <ul>
-     *     <li>Administrators may create users with any role in any department.</li>
-     *     <li>Managers may create only users with role {@link Role#USER}
-     *         and only within their own department.</li>
-     *     <li>All other roles are not permitted to create users.</li>
-     * </ul>
-     *
-     * @param actor               the authenticated user performing the operation
-     * @param requestedRole       the role requested for the new user
+     * @param actor               the acting user
+     * @param requestedRole       the role for the new user
      * @param requestedDepartment the department for the new user
-     * @throws InsufficientPermissionsException if the operation is not permitted
+     * @throws InsufficientPermissionsException if the actor is not allowed to create the user
      */
     public void validateCreation(User actor, Role requestedRole, Department requestedDepartment) {
+        require(actor != null, "Actor is required.");
+
         if (actor.isAdmin()) {
             return;
         }
 
         if (actor.isManager()) {
-            validateManagerCreationRules(actor, requestedRole, requestedDepartment);
+            require(requestedRole == Role.USER,
+                    "Managers may only create users with role USER.");
+            require(sameDepartment(actor.getDepartment(), requestedDepartment),
+                    "Managers may only create users in their own department.");
             return;
         }
 
-        throw new InsufficientPermissionsException("You do not have permission to create users.");
+        deny("You do not have permission to create users.");
     }
 
     /**
-     * Applies manager-specific constraints for user creation.
+     * Computes creation capabilities for the actor.
+     *
+     * <p>Returns the roles, departments, and flags the actor is allowed to use when
+     * creating a user. Intended for UI consumption (e.g. form configuration).</p>
+     *
+     * @param actor           the acting user
+     * @param allDepartments  all available departments as selectable options
+     * @return the actor's creation capabilities
      */
-    private void validateManagerCreationRules(User actor, Role requestedRole, Department requestedDepartment) {
-        if (requestedRole != Role.USER) {
-            throw new InsufficientPermissionsException("Managers may only create users with the role 'USER'.");
+    public CreateUserCapabilities getCreateCapabilities(
+            User actor,
+            List<DepartmentOption> allDepartments
+    ) {
+        require(actor != null, "Actor is required.");
+
+        if (actor.isAdmin()) {
+            return new CreateUserCapabilities(
+                    true,
+                    Set.of(Role.ADMIN, Role.MANAGER, Role.USER),
+                    allDepartments,
+                    true,
+                    Role.USER,
+                    true
+            );
         }
 
-        if (isDifferentDepartment(actor.getDepartment(), requestedDepartment)) {
-            throw new InsufficientPermissionsException("Managers may only create users within their own department.");
+        if (actor.isManager()) {
+            Department department = actor.getDepartment();
+
+            List<DepartmentOption> assignableDepartments =
+                    department == null
+                            ? List.of()
+                            : List.of(new DepartmentOption(department.getId(), department.getName()));
+
+            return new CreateUserCapabilities(
+                    true,
+                    Set.of(Role.USER),
+                    assignableDepartments,
+                    true,
+                    Role.USER,
+                    true
+            );
         }
+
+        return new CreateUserCapabilities(
+                false,
+                Set.of(),
+                List.of(),
+                false,
+                Role.USER,
+                true
+        );
     }
 
     /**
-     * Validates whether the actor is permitted to delete a user.
+     * Validates whether the actor is allowed to delete the target user.
      *
-     * <p>Rules:</p>
-     * <ul>
-     *     <li>No user may delete their own account.</li>
-     *     <li>Administrators may delete any user except when it would remove
-     *         the last active administrator.</li>
-     *     <li>Managers may delete only basic users in their own department.</li>
-     * </ul>
-     *
-     * @param actor the authenticated user performing the operation
+     * @param actor  the acting user
      * @param target the user to be deleted
-     * @throws InsufficientPermissionsException if the operation is not permitted
+     * @throws InsufficientPermissionsException if the actor is not allowed to delete the user
      */
     public void validateDeletion(User actor, User target) {
+        require(actor != null, "Actor is required.");
+        require(target != null, "Target user is required.");
 
-        if (isSameUser(actor, target)) {
-            throw new InsufficientPermissionsException("You may not delete your own account.");
-        }
+        require(!sameUser(actor, target),
+                "You may not delete your own account.");
 
         if (actor.isAdmin()) {
-            validateAdminDeletionRules(target);
+            require(!wouldLeaveSystemWithoutActiveAdmin(target),
+                    "You may not delete the last active administrator.");
             return;
         }
 
         if (actor.isManager()) {
-            validateManagerDeletionRules(actor, target);
+            require(canManageUser(actor, target),
+                    "Managers can only delete basic users in their own department.");
             return;
         }
 
-        throw new InsufficientPermissionsException("You are not allowed to delete this user.");
+        deny("You do not have permission to delete users.");
     }
 
     /**
-     * Applies administrator-specific constraints for user deletion.
-     */
-    private void validateAdminDeletionRules(User target) {
-        if (wouldLeaveSystemWithoutActiveAdmin(target)) {
-            throw new InsufficientPermissionsException(
-                    "You may not remove the last active admin."
-            );
-        }
-    }
-
-    /**
-     * Applies manager-specific constraints for user deletion.
-     */
-    private void validateManagerDeletionRules(User actor, User target) {
-        if (!target.isBasicUser() || isDifferentDepartment(actor, target)) {
-            throw new InsufficientPermissionsException(
-                    "Managers can only delete basic users in their own department."
-            );
-        }
-    }
-
-    /**
-     * Determines whether two users refer to the same persisted user.
+     * Computes deletion capabilities for the actor relative to the target user.
      *
-     * @return {@code true} if both users have the same identifier; {@code false} otherwise
+     * <p>Wraps {@link #validateDeletion(User, User)} and converts the result into
+     * a capability object suitable for API responses.</p>
+     *
+     * @param actor  the acting user
+     * @param target the user being evaluated
+     * @return the deletion capabilities, including denial reason if applicable
      */
-    private boolean isSameUser(User a, User b) {
-        return Objects.equals(a != null ? a.getId() : null,
-                b != null ? b.getId() : null);
+    public DeleteUserCapabilities getDeleteCapabilities(User actor, User target) {
+        try {
+            validateDeletion(actor, target);
+            return new DeleteUserCapabilities(true, null);
+        } catch (InsufficientPermissionsException e) {
+            return new DeleteUserCapabilities(false, e.getMessage());
+        }
+    }
+
+    private void require(boolean condition, String message) {
+        if (!condition) {
+            throw new InsufficientPermissionsException(message);
+        }
+    }
+
+    private void deny(String message) {
+        throw new InsufficientPermissionsException(message);
+    }
+
+    public static boolean sameUser(User a, User b) {
+        return a != null
+                && b != null
+                && Objects.equals(a.getId(), b.getId());
+    }
+
+    public static boolean sameDepartment(Department a, Department b) {
+        return a != null
+                && b != null
+                && Objects.equals(a.getId(), b.getId());
+    }
+
+    public static boolean canManageUser(User actor, User target) {
+        return actor != null
+                && target != null
+                && actor.isManager()
+                && target.isBasicUser()
+                && sameDepartment(actor.getDepartment(), target.getDepartment());
     }
 
     /**
-     * Determines whether removing the given user would leave the system without
+     * Determines whether deleting the given user would leave the system without
      * any active administrators.
      *
-     * @param user the user being removed or deactivated
-     * @return {@code true} if this would remove the last active administrator; {@code false} otherwise
+     * @param user the user being evaluated
+     * @return {@code true} if this is the last active administrator
      */
-    private boolean wouldLeaveSystemWithoutActiveAdmin(User user) {
+    public boolean wouldLeaveSystemWithoutActiveAdmin(User user) {
         return user.isAdmin()
                 && user.isActive()
                 && userRepository.countByRoleAndActiveTrue(Role.ADMIN) <= 1;
     }
 
-    /**
-     * Determines whether two departments differ.
-     *
-     * @return {@code true} if departments are not equal or either is {@code null}
-     */
-    private boolean isDifferentDepartment(Department left, Department right) {
-        return left == null
-                || right == null
-                || !Objects.equals(left.getId(), right.getId());
-    }
-
-    /**
-     * Determines whether two users belong to different departments.
-     */
-    private boolean isDifferentDepartment(User a, User b) {
-        return isDifferentDepartment(
-                a != null ? a.getDepartment() : null,
-                b != null ? b.getDepartment() : null
-        );
-    }
-
-    /**
-     * Validates whether the actor is permitted to update a user.
-     *
-     * <p>Rules vary by role:</p>
-     * <ul>
-     *     <li>Basic users may update only their own profile and may not change role,
-     *         department, or active status.</li>
-     *     <li>Managers may update their own profile and basic users in their department,
-     *         but may not change role or department.</li>
-     *     <li>Administrators may update any user but may not change their own role
-     *         or deactivate themselves or the last active administrator.</li>
-     * </ul>
-     *
-     * @param actor               the authenticated user performing the operation
-     * @param target              the user being updated
-     * @param request             the update request
-     * @param requestedDepartment the requested department, if any
-     * @throws InsufficientPermissionsException if the operation is not permitted
-     */
     public void validateUpdate(User actor,
                                User target,
                                UpdateUserRequest request,
                                Department requestedDepartment) {
 
-        UpdateIntent intent = buildUpdateIntent(actor, target, request, requestedDepartment);
 
-        if (actor.isAdmin()) {
-            validateAdminUpdateRules(target, intent);
-            return;
-        }
-
-        if (actor.isManager()) {
-            validateManagerUpdateRules(actor, target, intent);
-            return;
-        }
-
-        if (actor.isBasicUser()) {
-            validateBasicUserUpdateRules(intent);
-            return;
-        }
-
-        throw new InsufficientPermissionsException("You do not have permission to update users.");
     }
 
-    /**
-     * Applies user-specific constraints for user update.
-     */
-    private void validateBasicUserUpdateRules(UpdateIntent intent) {
-        if (!intent.self()) {
-            throw new InsufficientPermissionsException("Users can only update their own profile.");
-        }
+    public UpdateUserCapabilities getUpdateCapabilities(User actor, User target) {
 
-        if (intent.roleChangeRequested()
-                || intent.departmentChangeRequested()
-                || intent.activeChangeRequested()) {
-            throw new InsufficientPermissionsException(
-                    "Users cannot change their own role, department, or status."
-            );
-        }
-    }
-
-    /**
-     * Applies manager-specific constraints for user update.
-     */
-    private void validateManagerUpdateRules(User actor, User target, UpdateIntent intent) {
-
-        if (intent.self()) {
-            if (intent.roleChangeRequested() || intent.departmentChangeRequested()) {
-                throw new InsufficientPermissionsException(
-                        "Managers cannot change their own role or department."
-                );
-            }
-            if (intent.activeChangeRequested()) {
-                throw new InsufficientPermissionsException(
-                        "Managers cannot change their own active status."
-                );
-            }
-            return;
-        }
-
-        if (!target.isBasicUser() || isDifferentDepartment(actor, target)) {
-            throw new InsufficientPermissionsException(
-                    "Managers can only update basic users in their own department."
-            );
-        }
-
-        if (intent.roleChangeRequested() || intent.departmentChangeRequested()) {
-            throw new InsufficientPermissionsException(
-                    "Managers cannot change the role or department of other users."
-            );
-        }
-    }
-
-    /**
-     * Applies admin-specific constraints for user update.
-     */
-    private void validateAdminUpdateRules(User target, UpdateIntent intent) {
-        if (intent.self() && intent.roleChangeRequested()) {
-            throw new InsufficientPermissionsException(
-                    "Administrators cannot change their own role."
-            );
-        }
-
-        if (intent.deactivationRequested()) {
-            if (intent.self()) {
-                throw new InsufficientPermissionsException(
-                        "You cannot deactivate your own admin account."
-                );
-            }
-            if (wouldLeaveSystemWithoutActiveAdmin(target)) {
-                throw new InsufficientPermissionsException(
-                        "Cannot deactivate the last active administrator."
-                );
-            }
-        }
-    }
-
-    /**
-     * Builds an {@link UpdateIntent} describing the effective changes requested.
-     */
-    private UpdateIntent buildUpdateIntent(User actor,
-                                           User target,
-                                           UpdateUserRequest request,
-                                           Department requestedDepartment) {
-
-        boolean self = isSameUser(actor, target);
-
-        boolean roleChangeRequested =
-                request.role() != null && request.role() != target.getRole();
-
-        boolean departmentChangeRequested = requestedDepartment != null
-                && (target.getDepartment() == null
-                || !Objects.equals(requestedDepartment.getId(), target.getDepartment().getId()));
-
-        boolean activeChangeRequested =
-                request.active() != null && request.active() != target.isActive();
-
-        boolean deactivationRequested =
-                request.active() != null && !request.active() && target.isActive();
-
-        return new UpdateIntent(
-                self,
-                roleChangeRequested,
-                departmentChangeRequested,
-                activeChangeRequested,
-                deactivationRequested
+        return new UpdateUserCapabilities(
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false
         );
-    }
-
-    /**
-     * Describes the effective intent of an update request.
-     *
-     * @param self                      whether the actor is updating their own account
-     * @param roleChangeRequested       whether a role change was requested
-     * @param departmentChangeRequested whether a department change was requested
-     * @param activeChangeRequested     whether an active status change was requested
-     * @param deactivationRequested     whether a deactivation was requested
-     */
-    private record UpdateIntent(
-            boolean self,
-            boolean roleChangeRequested,
-            boolean departmentChangeRequested,
-            boolean activeChangeRequested,
-            boolean deactivationRequested
-    ) {
     }
 }
