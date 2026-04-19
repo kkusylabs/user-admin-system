@@ -13,7 +13,6 @@ import jakarta.validation.constraints.*;
  * @param email        user's email address (must be unique)
  * @param phone        user's phone number
  * @param jobTitle     user's job title
- * @param active       whether the user is active upon creation
  * @param departmentId identifier of the associated department
  * @param role         role assigned to the user
  * @author kkusy
@@ -43,11 +42,10 @@ public record CreateUserRequest(
         @Size(max = 100)
         String jobTitle,
 
-        Boolean active,
-
         @NotNull
         Long departmentId,
 
+        @NotNull
         Role role
 ) {
     public CreateUserRequest {
@@ -56,8 +54,5 @@ public record CreateUserRequest(
         email = StringNormalizer.normalizeEmail(email);
         phone = StringNormalizer.normalizePhone(phone);
         jobTitle = StringNormalizer.trimToNull(jobTitle);
-
-        role = (role == null) ? Role.USER : role;
-        active = (active == null) ? Boolean.TRUE : active;
     }
 }

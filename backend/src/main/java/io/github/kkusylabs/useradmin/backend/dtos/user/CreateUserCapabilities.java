@@ -10,8 +10,6 @@ public record CreateUserCapabilities(
         boolean canCreateUser,
         Set<Role> assignableRoles,
         List<DepartmentOption> assignableDepartments,
-        boolean canSetActive,
-        Role defaultRole,
-        boolean defaultActive
+        Role defaultRole
 ) {
 }

@@ -1,6 +1,7 @@
 package io.github.kkusylabs.useradmin.backend.services.user;
 
 import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentOption;
+import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentSummary;
 import io.github.kkusylabs.useradmin.backend.dtos.user.CreateUserCapabilities;
 import io.github.kkusylabs.useradmin.backend.dtos.user.DeleteUserCapabilities;
 import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserCapabilities;
@@ -9,9 +10,11 @@ import io.github.kkusylabs.useradmin.backend.exceptions.security.InsufficientPer
 import io.github.kkusylabs.useradmin.backend.models.Department;
 import io.github.kkusylabs.useradmin.backend.models.Role;
 import io.github.kkusylabs.useradmin.backend.models.User;
+import io.github.kkusylabs.useradmin.backend.repositories.DepartmentRepository;
 import io.github.kkusylabs.useradmin.backend.repositories.UserRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -33,14 +36,16 @@ import java.util.Set;
 public class UserAuthorizationService {
 
     private final UserRepository userRepository;
+    private final DepartmentRepository departmentRepository;
 
     /**
      * Creates a new authorization service.
      *
      * @param userRepository repository used for queries required by authorization rules
      */
-    public UserAuthorizationService(UserRepository userRepository) {
+    public UserAuthorizationService(UserRepository userRepository, DepartmentRepository departmentRepository) {
         this.userRepository = userRepository;
+        this.departmentRepository = departmentRepository;
     }
 
     /**
@@ -70,6 +75,12 @@ public class UserAuthorizationService {
         deny("You do not have permission to create users.");
     }
 
+    public boolean canCreate(User actor) {
+        require(actor != null, "Actor is required.");
+
+        return actor.isAdmin() || actor.isManager();
+    }
+
     /**
      * Computes creation capabilities for the actor.
      *
@@ -77,12 +88,10 @@ public class UserAuthorizationService {
      * creating a user. Intended for UI consumption (e.g. form configuration).</p>
      *
      * @param actor           the acting user
-     * @param allDepartments  all available departments as selectable options
      * @return the actor's creation capabilities
      */
     public CreateUserCapabilities getCreateCapabilities(
-            User actor,
-            List<DepartmentOption> allDepartments
+            User actor
     ) {
         require(actor != null, "Actor is required.");
 
@@ -90,10 +99,8 @@ public class UserAuthorizationService {
             return new CreateUserCapabilities(
                     true,
                     Set.of(Role.ADMIN, Role.MANAGER, Role.USER),
-                    allDepartments,
-                    true,
-                    Role.USER,
-                    true
+                    getAllDepartmentOptions(),
+                    Role.USER
             );
         }
 
@@ -109,9 +116,7 @@ public class UserAuthorizationService {
                     true,
                     Set.of(Role.USER),
                     assignableDepartments,
-                    true,
-                    Role.USER,
-                    true
+                    Role.USER
             );
         }
 
@@ -119,9 +124,7 @@ public class UserAuthorizationService {
                 false,
                 Set.of(),
                 List.of(),
-                false,
-                Role.USER,
-                true
+                Role.USER
         );
     }
 
@@ -173,6 +176,46 @@ public class UserAuthorizationService {
         }
     }
 
+    public void validateUpdate(User actor,
+                               User target,
+                               UpdateUserRequest request,
+                               Department requestedDepartment) {
+
+
+    }
+
+    public boolean canEdit(User actor, User target) {
+        require(actor != null, "Actor is required.");
+        require(target != null, "Target user is required.");
+
+        if (sameUser(actor, target)) {
+            return true;
+        }
+
+        if (actor.isAdmin()) {
+            return true;
+        }
+
+        if (actor.isManager()) {
+            return canManageUser(actor, target);
+        }
+
+        return false;
+    }
+
+    public UpdateUserCapabilities getUpdateCapabilities(User actor, User target) {
+
+        return new UpdateUserCapabilities(
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false
+        );
+    }
+
     private void require(boolean condition, String message) {
         if (!condition) {
             throw new InsufficientPermissionsException(message);
@@ -204,6 +247,16 @@ public class UserAuthorizationService {
     }
 
     /**
+     * Returns all departments as UI-friendly options, sorted by name.
+     */
+    private List<DepartmentOption> getAllDepartmentOptions() {
+        return departmentRepository.findAllBy().stream()
+                .sorted(Comparator.comparing(DepartmentSummary::getName, String.CASE_INSENSITIVE_ORDER))
+                .map(d -> new DepartmentOption(d.getId(), d.getName()))
+                .toList();
+    }
+
+    /**
      * Determines whether deleting the given user would leave the system without
      * any active administrators.
      *
@@ -216,24 +269,4 @@ public class UserAuthorizationService {
                 && userRepository.countByRoleAndActiveTrue(Role.ADMIN) <= 1;
     }
 
-    public void validateUpdate(User actor,
-                               User target,
-                               UpdateUserRequest request,
-                               Department requestedDepartment) {
-
-
-    }
-
-    public UpdateUserCapabilities getUpdateCapabilities(User actor, User target) {
-
-        return new UpdateUserCapabilities(
-                false,
-                false,
-                false,
-                false,
-                false,
-                false,
-                false
-        );
-    }
 }

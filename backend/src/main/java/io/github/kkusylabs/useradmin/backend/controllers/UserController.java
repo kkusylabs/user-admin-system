@@ -1,9 +1,7 @@
 package io.github.kkusylabs.useradmin.backend.controllers;
 
 import io.github.kkusylabs.useradmin.backend.dtos.common.AuthenticatedActor;
-import io.github.kkusylabs.useradmin.backend.dtos.user.CreateUserRequest;
-import io.github.kkusylabs.useradmin.backend.dtos.user.UserListResponse;
-import io.github.kkusylabs.useradmin.backend.dtos.user.UserResponse;
+import io.github.kkusylabs.useradmin.backend.dtos.user.*;
 import io.github.kkusylabs.useradmin.backend.security.AuthenticatedActorResolver;
 import io.github.kkusylabs.useradmin.backend.services.user.UserService;
 import jakarta.validation.Valid;
@@ -49,12 +47,12 @@ public class UserController {
      */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<UserResponse> createUser(
+    public ResponseEntity<UserListItemResponse> createUser(
             @Valid @RequestBody CreateUserRequest request,
             @AuthenticationPrincipal Jwt jwt
     ) {
         AuthenticatedActor actor = authenticatedActorResolver.fromJwt(jwt);
-        UserResponse createdUser = userService.createUser(request, actor);
+        UserListItemResponse createdUser = userService.createUser(request, actor);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
 
@@ -70,7 +68,7 @@ public class UserController {
             @AuthenticationPrincipal Jwt jwt
     ) {
         AuthenticatedActor actor = authenticatedActorResolver.fromJwt(jwt);
-        return ResponseEntity.ok(userService.findAll(pageable, actor));
+        return ResponseEntity.ok(userService.getUsers(pageable, actor));
     }
 
     /**
@@ -80,12 +78,12 @@ public class UserController {
      * @return the user
      */
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> findById(
+    public ResponseEntity<UserListItemResponse> findById(
             @PathVariable Long id,
             @AuthenticationPrincipal Jwt jwt
     ) {
         AuthenticatedActor actor = authenticatedActorResolver.fromJwt(jwt);
-        return ResponseEntity.ok(userService.findById(id, actor));
+        return ResponseEntity.ok(userService.getUserById(id, actor));
     }
 
     /**
@@ -101,7 +99,26 @@ public class UserController {
             @AuthenticationPrincipal Jwt jwt
     ) {
         AuthenticatedActor actor = authenticatedActorResolver.fromJwt(jwt);
-        userService.deleteById(id, actor);
+        userService.deleteUserById(id, actor);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/edit")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
+    public ResponseEntity<EditUserResponse> getUserForEdit(
+            @PathVariable Long id,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        AuthenticatedActor actor = authenticatedActorResolver.fromJwt(jwt);
+        return ResponseEntity.ok(userService.getUserForEdit(id, actor));
+    }
+
+    @GetMapping("/create-capabilities")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<CreateUserCapabilities> getCreateCapabilities(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        AuthenticatedActor actor = authenticatedActorResolver.fromJwt(jwt);
+        return ResponseEntity.ok(userService.getCreateCapabilities(actor));
     }
 }

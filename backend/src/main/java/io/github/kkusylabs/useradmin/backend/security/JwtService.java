@@ -10,6 +10,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Service responsible for creating JWT access tokens.
@@ -53,8 +54,7 @@ public class JwtService {
         return Jwts.builder()
                 .subject(user.getUsername())
                 .claim("userId", user.getId())
-                .claim("role", user.getRole().name())
-                .claim("departmentId", user.getDepartment().getId())
+                .claim("roles", List.of(user.getRole().name()))
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(expirationMillis)))
                 .signWith(signingKey, Jwts.SIG.HS256)

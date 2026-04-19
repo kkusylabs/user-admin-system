@@ -2,11 +2,7 @@ package io.github.kkusylabs.useradmin.backend.services.user;
 
 import io.github.kkusylabs.useradmin.backend.dtos.common.AuthenticatedActor;
 import io.github.kkusylabs.useradmin.backend.dtos.common.PagedResponse;
-import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentOption;
-import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentSummary;
-import io.github.kkusylabs.useradmin.backend.dtos.user.CreateUserRequest;
-import io.github.kkusylabs.useradmin.backend.dtos.user.UserListResponse;
-import io.github.kkusylabs.useradmin.backend.dtos.user.UserResponse;
+import io.github.kkusylabs.useradmin.backend.dtos.user.*;
 import io.github.kkusylabs.useradmin.backend.exceptions.department.DepartmentNotFoundException;
 import io.github.kkusylabs.useradmin.backend.exceptions.security.InsufficientPermissionsException;
 import io.github.kkusylabs.useradmin.backend.exceptions.user.EmailAlreadyExistsException;
@@ -21,9 +17,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Comparator;
-import java.util.List;
 
 /**
  * Application service for managing {@link User} entities.
@@ -87,7 +80,7 @@ public class UserService {
      * @throws InsufficientPermissionsException if the actor is not allowed to create the user
      */
     @Transactional
-    public UserResponse createUser(CreateUserRequest request, AuthenticatedActor actor) {
+    public UserListItemResponse createUser(CreateUserRequest request, AuthenticatedActor actor) {
         User actorUser = getActorUser(actor);
 
         if (userRepository.existsByUsername(request.username())) {
@@ -103,7 +96,7 @@ public class UserService {
         User newUser = userMapper.fromCreateRequest(request, department);
         newUser.setPasswordHash(passwordEncoder.encode(request.password()));
         User savedUser = userRepository.save(newUser);
-        return toUserResponse(actorUser, savedUser);
+        return toUserListItemResponse(actorUser, savedUser);
     }
 
     /**
@@ -116,15 +109,14 @@ public class UserService {
      * @return a paged response of users
      */
     @Transactional(readOnly = true)
-    public UserListResponse findAll(Pageable pageable, AuthenticatedActor actor) {
+    public UserListResponse getUsers(Pageable pageable, AuthenticatedActor actor) {
         User actorUser = getActorUser(actor);
-        Page<UserResponse> page = userRepository.findAll(pageable)
-                .map(targetUser -> toUserResponse(actorUser, targetUser));
+        Page<UserListItemResponse> page = userRepository.findAll(pageable)
+                .map(targetUser -> toUserListItemResponse(actorUser, targetUser));
 
         return new UserListResponse(
                 PagedResponse.from(page),
-                userAuthorizationService.getCreateCapabilities(actorUser,
-                        getAllDepartmentOptions()));
+                userAuthorizationService.canCreate(actorUser));
     }
 
     /**
@@ -138,10 +130,20 @@ public class UserService {
      * @throws UserNotFoundException if the user does not exist
      */
     @Transactional(readOnly = true)
-    public UserResponse findById(Long targetUserId, AuthenticatedActor actor) {
+    public UserListItemResponse getUserById(Long targetUserId, AuthenticatedActor actor) {
         User actorUser = getActorUser(actor);
         User targetUser = getTargetUser(targetUserId);
-        return toUserResponse(actorUser, targetUser);
+        return toUserListItemResponse(actorUser, targetUser);
+    }
+
+    @Transactional(readOnly = true)
+    public EditUserResponse getUserForEdit(Long targetUserId, AuthenticatedActor actor) {
+        User actorUser = getActorUser(actor);
+        User targetUser = getTargetUser(targetUserId);
+
+        return userMapper.toEditResponse(
+                targetUser,
+                userAuthorizationService.getUpdateCapabilities(actorUser, targetUser));
     }
 
     /**
@@ -155,7 +157,7 @@ public class UserService {
      * @throws InsufficientPermissionsException if the actor is not allowed to delete the user
      */
     @Transactional
-    public void deleteById(Long targetUserId, AuthenticatedActor actor) {
+    public void deleteUserById(Long targetUserId, AuthenticatedActor actor) {
         User actorUser = getActorUser(actor);
         User targetUser = getTargetUser(targetUserId);
         userAuthorizationService.validateDeletion(actorUser, targetUser);
@@ -202,29 +204,17 @@ public class UserService {
                 .orElseThrow(() -> new DepartmentNotFoundException(departmentId));
     }
 
-    /**
-     * Returns all departments as UI-friendly options, sorted by name.
-     */
-    private List<DepartmentOption> getAllDepartmentOptions() {
-        return departmentRepository.findAllBy().stream()
-                .sorted(Comparator.comparing(DepartmentSummary::getName, String.CASE_INSENSITIVE_ORDER))
-                .map(d -> new DepartmentOption(d.getId(), d.getName()))
-                .toList();
-    }
-
-    /**
-     * Builds a {@link UserResponse} for the given target user, including
-     * authorization capabilities relative to the actor.
-     *
-     * @param actorUser  the acting user
-     * @param targetUser the user being returned
-     * @return the response DTO with permission metadata
-     */
-    private UserResponse toUserResponse(User actorUser, User targetUser) {
-        return userMapper.toResponse(
+    private UserListItemResponse toUserListItemResponse(User actorUser, User targetUser) {
+        return userMapper.toListItemResponse(
                 targetUser,
-                userAuthorizationService.getUpdateCapabilities(actorUser, targetUser),
+                userAuthorizationService.canEdit(actorUser, targetUser),
                 userAuthorizationService.getDeleteCapabilities(actorUser, targetUser)
         );
+    }
+
+    @Transactional(readOnly = true)
+    public CreateUserCapabilities getCreateCapabilities(AuthenticatedActor actor) {
+        User actorUser = getActorUser(actor);
+        return userAuthorizationService.getCreateCapabilities(actorUser);
     }
 }

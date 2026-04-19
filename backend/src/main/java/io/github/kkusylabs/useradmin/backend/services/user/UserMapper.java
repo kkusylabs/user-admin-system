@@ -9,11 +9,7 @@ import org.springframework.stereotype.Component;
 /**
  * Maps between {@link User} entities and user-related DTOs.
  *
- * <p>
- * This component is responsible for constructing and updating {@link User}
- * entities from request DTOs and for converting entities into
- * {@link UserResponse} objects.
- * </p>
+ *
  *
  * <p>
  * Normalization and field-level transformations, such as trimming text and
@@ -41,7 +37,7 @@ public final class UserMapper {
         user.setEmail(request.email());
         user.setPhone(request.phone());
         user.setJobTitle(request.jobTitle());
-        user.setActive(request.active());
+        user.setActive(true);
         user.setRole(request.role());
         user.setDepartment(department);
         return user;
@@ -90,29 +86,14 @@ public final class UserMapper {
         }
     }
 
-    /**
-     * Converts a {@link User} entity into a {@link UserResponse}.
-     *
-     * <p>Includes department information and authorization capabilities
-     * relative to the acting user.</p>
-     *
-     * @param user               the user entity
-     * @param updateCapabilities the caller's update permissions for the user
-     * @param deleteCapabilities the caller's delete permissions for the user
-     * @return the response DTO
-     */
-    public UserResponse toResponse(
-            User user,
-            UpdateUserCapabilities updateCapabilities,
-            DeleteUserCapabilities deleteCapabilities
-    ) {
+    public UserDetailResponse toDetailResponse(User user) {
         Department department = user.getDepartment();
 
         DepartmentOption departmentOption = department == null
                 ? null
                 : new DepartmentOption(department.getId(), department.getName());
 
-        return new UserResponse(
+        return new UserDetailResponse(
                 user.getId(),
                 user.getUsername(),
                 user.getFullName(),
@@ -121,10 +102,29 @@ public final class UserMapper {
                 user.getJobTitle(),
                 user.isActive(),
                 user.getRole(),
-                departmentOption,
-                updateCapabilities,
-                deleteCapabilities
+                departmentOption
         );
     }
 
+  public UserListItemResponse toListItemResponse(
+            User user,
+            boolean canEdit,
+            DeleteUserCapabilities deleteCapabilities
+    ) {
+        return new UserListItemResponse(
+                toDetailResponse(user),
+                canEdit,
+                deleteCapabilities
+        );
+  }
+
+    public EditUserResponse toEditResponse(
+            User user,
+            UpdateUserCapabilities updateCapabilities
+    ) {
+        return new EditUserResponse(
+                toDetailResponse(user),
+                updateCapabilities
+        );
+    }
 }

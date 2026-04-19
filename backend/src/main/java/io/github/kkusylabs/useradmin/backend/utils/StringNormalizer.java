@@ -58,9 +58,6 @@ public class StringNormalizer {
 
     public static String normalizePhone(String value) {
         String phone = trimToNull(value);
-        if (phone != null) {
-            phone = phone.replaceAll("[^0-9+]", "");
-        }
-        return phone;
+        return phone == null ? null : phone.replaceAll("[^0-9+]", "");
     }
 }

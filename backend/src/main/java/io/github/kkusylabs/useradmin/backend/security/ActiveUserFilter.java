@@ -10,6 +10,7 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -56,6 +57,12 @@ public class ActiveUserFilter extends OncePerRequestFilter {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
+        System.out.println("Authorities: " + authentication.getAuthorities());
+
+        if (authentication instanceof JwtAuthenticationToken jwtAuth) {
+            System.out.println("JWT claims: " + jwtAuth.getToken().getClaims());
+        }
+
         if (authentication != null
                 && authentication.isAuthenticated()
                 && authentication.getPrincipal() instanceof Jwt jwt) {
@@ -73,5 +80,11 @@ public class ActiveUserFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.startsWith("/api/auth/");
     }
 }
