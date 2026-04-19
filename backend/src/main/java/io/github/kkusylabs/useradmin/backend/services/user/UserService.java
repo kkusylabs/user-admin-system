@@ -80,6 +80,8 @@ public class UserService {
      */
     @Transactional
     public UserListItemResponse createUser(CreateUserRequest request, Long actorId) {
+        User actor = getRequiredActor(actorId);
+
         if (userRepository.existsByUsername(request.username())) {
             throw new UsernameAlreadyExistsException(request.username());
         }
@@ -88,7 +90,6 @@ public class UserService {
             throw new EmailAlreadyExistsException(request.email());
         }
 
-        User actor = getRequiredActor(actorId);
         Department department = getRequiredDepartment(request.departmentId());
         userAuthorizationService.validateCreation(actor, request.role(), department);
         User newUser = userMapper.fromCreateRequest(request, department);
@@ -128,14 +129,14 @@ public class UserService {
      * @throws UserNotFoundException if the user does not exist
      */
     @Transactional(readOnly = true)
-    public UserListItemResponse getUserById(Long targetUserId, Long actorId) {
+    public UserListItemResponse getUser(Long targetUserId, Long actorId) {
         User actor = getRequiredActor(actorId);
         User targetUser = getRequiredTargetUser(targetUserId);
         return toUserListItemResponse(actor, targetUser);
     }
 
     @Transactional(readOnly = true)
-    public EditUserResponse getUserForEdit(Long targetUserId, Long actorId) {
+    public EditUserResponse getUserEditData(Long targetUserId, Long actorId) {
         User actor = getRequiredActor(actorId);
         User targetUser = getRequiredTargetUser(targetUserId);
 
@@ -155,7 +156,7 @@ public class UserService {
      * @throws InsufficientPermissionsException if the actor is not allowed to delete the user
      */
     @Transactional
-    public void deleteUserById(Long targetUserId, Long actorId) {
+    public void deleteUser(Long targetUserId, Long actorId) {
         User actor = getRequiredActor(actorId);
         User targetUser = getRequiredTargetUser(targetUserId);
         userAuthorizationService.validateDeletion(actor, targetUser);
@@ -163,7 +164,7 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public CreateUserCapabilities getCreateCapabilities(Long actorId) {
+    public CreateUserCapabilities getCreateUserCapabilities(Long actorId) {
         User actor = getRequiredActor(actorId);
         return userAuthorizationService.getCreateCapabilities(actor);
     }

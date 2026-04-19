@@ -55,7 +55,7 @@ public class UserController {
      * @return a paged response of users
      */
     @GetMapping
-    public ResponseEntity<UserListResponse> findAll(
+    public ResponseEntity<UserListResponse> getUsers(
             Pageable pageable,
             @CurrentActorId Long actorId
     ) {
@@ -69,11 +69,11 @@ public class UserController {
      * @return the user
      */
     @GetMapping("/{id}")
-    public ResponseEntity<UserListItemResponse> findById(
+    public ResponseEntity<UserListItemResponse> getUser(
             @PathVariable Long id,
             @CurrentActorId Long actorId
     ) {
-        return ResponseEntity.ok(userService.getUserById(id, actorId));
+        return ResponseEntity.ok(userService.getUser(id, actorId));
     }
 
     /**
@@ -84,28 +84,28 @@ public class UserController {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<Void> deleteById(
+    public ResponseEntity<Void> deleteUser(
             @PathVariable Long id,
             @CurrentActorId Long actorId
     ) {
-        userService.deleteUserById(id, actorId);
+        userService.deleteUser(id, actorId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}/edit")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
-    public ResponseEntity<EditUserResponse> getUserForEdit(
+    public ResponseEntity<EditUserResponse> getUserEditData(
             @PathVariable Long id,
             @CurrentActorId Long actorId
     ) {
-        return ResponseEntity.ok(userService.getUserForEdit(id, actorId));
+        return ResponseEntity.ok(userService.getUserEditData(id, actorId));
     }
 
     @GetMapping("/create-capabilities")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<CreateUserCapabilities> getCreateCapabilities(
+    public ResponseEntity<CreateUserCapabilities> getCreateUserCapabilities(
             @CurrentActorId Long actorId
     ) {
-        return ResponseEntity.ok(userService.getCreateCapabilities(actorId));
+        return ResponseEntity.ok(userService.getCreateUserCapabilities(actorId));
     }
 }
