@@ -1,6 +1,5 @@
 package io.github.kkusylabs.useradmin.backend.services.user;
 
-import io.github.kkusylabs.useradmin.backend.dtos.common.AuthenticatedActor;
 import io.github.kkusylabs.useradmin.backend.dtos.common.PagedResponse;
 import io.github.kkusylabs.useradmin.backend.dtos.user.*;
 import io.github.kkusylabs.useradmin.backend.exceptions.department.DepartmentNotFoundException;
@@ -71,7 +70,7 @@ public class UserService {
      * and persists the user with an encoded password.</p>
      *
      * @param request the user creation request
-     * @param actor   the authenticated actor performing the operation
+
      * @return the created user
      * @throws UserNotFoundException            if the actor does not exist
      * @throws UsernameAlreadyExistsException   if the username is already in use
@@ -80,9 +79,7 @@ public class UserService {
      * @throws InsufficientPermissionsException if the actor is not allowed to create the user
      */
     @Transactional
-    public UserListItemResponse createUser(CreateUserRequest request, AuthenticatedActor actor) {
-        User actorUser = getActorUser(actor);
-
+    public UserListItemResponse createUser(CreateUserRequest request, Long actorId) {
         if (userRepository.existsByUsername(request.username())) {
             throw new UsernameAlreadyExistsException(request.username());
         }
@@ -91,12 +88,13 @@ public class UserService {
             throw new EmailAlreadyExistsException(request.email());
         }
 
-        Department department = getDepartment(request.departmentId());
-        userAuthorizationService.validateCreation(actorUser, request.role(), department);
+        User actor = getRequiredActor(actorId);
+        Department department = getRequiredDepartment(request.departmentId());
+        userAuthorizationService.validateCreation(actor, request.role(), department);
         User newUser = userMapper.fromCreateRequest(request, department);
         newUser.setPasswordHash(passwordEncoder.encode(request.password()));
         User savedUser = userRepository.save(newUser);
-        return toUserListItemResponse(actorUser, savedUser);
+        return toUserListItemResponse(actor, savedUser);
     }
 
     /**
@@ -105,18 +103,18 @@ public class UserService {
      * <p>Each result includes authorization capabilities relative to the actor.</p>
      *
      * @param pageable pagination and sorting information
-     * @param actor    the authenticated actor performing the request
+
      * @return a paged response of users
      */
     @Transactional(readOnly = true)
-    public UserListResponse getUsers(Pageable pageable, AuthenticatedActor actor) {
-        User actorUser = getActorUser(actor);
+    public UserListResponse getUsers(Pageable pageable, Long actorId) {
+        User actor = getRequiredActor(actorId);
         Page<UserListItemResponse> page = userRepository.findAll(pageable)
-                .map(targetUser -> toUserListItemResponse(actorUser, targetUser));
+                .map(targetUser -> toUserListItemResponse(actor, targetUser));
 
         return new UserListResponse(
                 PagedResponse.from(page),
-                userAuthorizationService.canCreate(actorUser));
+                userAuthorizationService.canCreate(actor));
     }
 
     /**
@@ -125,25 +123,25 @@ public class UserService {
      * <p>Includes authorization capabilities relative to the actor.</p>
      *
      * @param targetUserId the user identifier
-     * @param actor        the authenticated actor performing the request
+
      * @return the user
      * @throws UserNotFoundException if the user does not exist
      */
     @Transactional(readOnly = true)
-    public UserListItemResponse getUserById(Long targetUserId, AuthenticatedActor actor) {
-        User actorUser = getActorUser(actor);
-        User targetUser = getTargetUser(targetUserId);
-        return toUserListItemResponse(actorUser, targetUser);
+    public UserListItemResponse getUserById(Long targetUserId, Long actorId) {
+        User actor = getRequiredActor(actorId);
+        User targetUser = getRequiredTargetUser(targetUserId);
+        return toUserListItemResponse(actor, targetUser);
     }
 
     @Transactional(readOnly = true)
-    public EditUserResponse getUserForEdit(Long targetUserId, AuthenticatedActor actor) {
-        User actorUser = getActorUser(actor);
-        User targetUser = getTargetUser(targetUserId);
+    public EditUserResponse getUserForEdit(Long targetUserId, Long actorId) {
+        User actor = getRequiredActor(actorId);
+        User targetUser = getRequiredTargetUser(targetUserId);
 
         return userMapper.toEditResponse(
                 targetUser,
-                userAuthorizationService.getUpdateCapabilities(actorUser, targetUser));
+                userAuthorizationService.getUpdateCapabilities(actor, targetUser));
     }
 
     /**
@@ -152,38 +150,30 @@ public class UserService {
      * <p>Validates that the actor has permission before deletion.</p>
      *
      * @param targetUserId the user identifier
-     * @param actor        the authenticated actor performing the operation
+
      * @throws UserNotFoundException            if the actor or target user does not exist
      * @throws InsufficientPermissionsException if the actor is not allowed to delete the user
      */
     @Transactional
-    public void deleteUserById(Long targetUserId, AuthenticatedActor actor) {
-        User actorUser = getActorUser(actor);
-        User targetUser = getTargetUser(targetUserId);
-        userAuthorizationService.validateDeletion(actorUser, targetUser);
+    public void deleteUserById(Long targetUserId, Long actorId) {
+        User actor = getRequiredActor(actorId);
+        User targetUser = getRequiredTargetUser(targetUserId);
+        userAuthorizationService.validateDeletion(actor, targetUser);
         userRepository.delete(targetUser);
     }
 
-    /**
-     * Resolves the authenticated actor to a {@link User}.
-     *
-     * @param actor the authenticated actor
-     * @return the corresponding user
-     * @throws UserNotFoundException if the actor does not exist
-     */
-    private User getActorUser(AuthenticatedActor actor) {
-        return userRepository.findById(actor.actorId())
-                .orElseThrow(() -> new UserNotFoundException(actor.actorId()));
+    @Transactional(readOnly = true)
+    public CreateUserCapabilities getCreateCapabilities(Long actorId) {
+        User actor = getRequiredActor(actorId);
+        return userAuthorizationService.getCreateCapabilities(actor);
     }
 
-    /**
-     * Loads a user by ID.
-     *
-     * @param targetUserId the user identifier
-     * @return the user
-     * @throws UserNotFoundException if the user does not exist
-     */
-    private User getTargetUser(Long targetUserId) {
+    private User getRequiredActor(Long actorId) {
+        return userRepository.findById(actorId)
+                .orElseThrow(() -> new UserNotFoundException(actorId));
+    }
+
+    private User getRequiredTargetUser(Long targetUserId) {
         return userRepository.findById(targetUserId)
                 .orElseThrow(() -> new UserNotFoundException(targetUserId));
     }
@@ -195,11 +185,7 @@ public class UserService {
      * @return the department, or {@code null} if none was provided
      * @throws DepartmentNotFoundException if the department does not exist
      */
-    private Department getDepartment(Long departmentId) {
-        if (departmentId == null) {
-            return null;
-        }
-
+    private Department getRequiredDepartment(Long departmentId) {
         return departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new DepartmentNotFoundException(departmentId));
     }
@@ -212,9 +198,4 @@ public class UserService {
         );
     }
 
-    @Transactional(readOnly = true)
-    public CreateUserCapabilities getCreateCapabilities(AuthenticatedActor actor) {
-        User actorUser = getActorUser(actor);
-        return userAuthorizationService.getCreateCapabilities(actorUser);
-    }
 }

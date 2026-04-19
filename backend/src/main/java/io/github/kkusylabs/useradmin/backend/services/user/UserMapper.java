@@ -37,7 +37,6 @@ public final class UserMapper {
         user.setEmail(request.email());
         user.setPhone(request.phone());
         user.setJobTitle(request.jobTitle());
-        user.setActive(true);
         user.setRole(request.role());
         user.setDepartment(department);
         return user;

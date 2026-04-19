@@ -57,12 +57,6 @@ public class ActiveUserFilter extends OncePerRequestFilter {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        System.out.println("Authorities: " + authentication.getAuthorities());
-
-        if (authentication instanceof JwtAuthenticationToken jwtAuth) {
-            System.out.println("JWT claims: " + jwtAuth.getToken().getClaims());
-        }
-
         if (authentication != null
                 && authentication.isAuthenticated()
                 && authentication.getPrincipal() instanceof Jwt jwt) {

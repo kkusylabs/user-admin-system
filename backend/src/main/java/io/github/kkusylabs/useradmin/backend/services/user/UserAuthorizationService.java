@@ -1,7 +1,7 @@
 package io.github.kkusylabs.useradmin.backend.services.user;
 
 import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentOption;
-import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentSummary;
+import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentDetailsResponse;
 import io.github.kkusylabs.useradmin.backend.dtos.user.CreateUserCapabilities;
 import io.github.kkusylabs.useradmin.backend.dtos.user.DeleteUserCapabilities;
 import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserCapabilities;
@@ -255,7 +255,7 @@ public class UserAuthorizationService {
      */
     private List<DepartmentOption> getAllDepartmentOptions() {
         return departmentRepository.findAllBy().stream()
-                .sorted(Comparator.comparing(DepartmentSummary::getName, String.CASE_INSENSITIVE_ORDER))
+                .sorted(Comparator.comparing(DepartmentDetailsResponse::getName, String.CASE_INSENSITIVE_ORDER))
                 .map(d -> new DepartmentOption(d.getId(), d.getName()))
                 .toList();
     }

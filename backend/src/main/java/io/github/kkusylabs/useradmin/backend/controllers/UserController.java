@@ -1,16 +1,13 @@
 package io.github.kkusylabs.useradmin.backend.controllers;
 
-import io.github.kkusylabs.useradmin.backend.dtos.common.AuthenticatedActor;
 import io.github.kkusylabs.useradmin.backend.dtos.user.*;
-import io.github.kkusylabs.useradmin.backend.security.AuthenticatedActorResolver;
+import io.github.kkusylabs.useradmin.backend.security.CurrentActorId;
 import io.github.kkusylabs.useradmin.backend.services.user.UserService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -25,18 +22,14 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
-    private final AuthenticatedActorResolver authenticatedActorResolver;
 
     /**
      * Creates a new {@code UserController}.
      *
      * @param userService                the service used to manage users
-     * @param authenticatedActorResolver resolves the authenticated actor from a JWT
      */
-    public UserController(UserService userService,
-                          AuthenticatedActorResolver authenticatedActorResolver) {
+    public UserController(UserService userService) {
         this.userService = userService;
-        this.authenticatedActorResolver = authenticatedActorResolver;
     }
 
     /**
@@ -49,10 +42,9 @@ public class UserController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<UserListItemResponse> createUser(
             @Valid @RequestBody CreateUserRequest request,
-            @AuthenticationPrincipal Jwt jwt
+            @CurrentActorId Long actorId
     ) {
-        AuthenticatedActor actor = authenticatedActorResolver.fromJwt(jwt);
-        UserListItemResponse createdUser = userService.createUser(request, actor);
+        UserListItemResponse createdUser = userService.createUser(request, actorId);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
 
@@ -65,10 +57,9 @@ public class UserController {
     @GetMapping
     public ResponseEntity<UserListResponse> findAll(
             Pageable pageable,
-            @AuthenticationPrincipal Jwt jwt
+            @CurrentActorId Long actorId
     ) {
-        AuthenticatedActor actor = authenticatedActorResolver.fromJwt(jwt);
-        return ResponseEntity.ok(userService.getUsers(pageable, actor));
+        return ResponseEntity.ok(userService.getUsers(pageable, actorId));
     }
 
     /**
@@ -80,10 +71,9 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<UserListItemResponse> findById(
             @PathVariable Long id,
-            @AuthenticationPrincipal Jwt jwt
+            @CurrentActorId Long actorId
     ) {
-        AuthenticatedActor actor = authenticatedActorResolver.fromJwt(jwt);
-        return ResponseEntity.ok(userService.getUserById(id, actor));
+        return ResponseEntity.ok(userService.getUserById(id, actorId));
     }
 
     /**
@@ -96,10 +86,9 @@ public class UserController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<Void> deleteById(
             @PathVariable Long id,
-            @AuthenticationPrincipal Jwt jwt
+            @CurrentActorId Long actorId
     ) {
-        AuthenticatedActor actor = authenticatedActorResolver.fromJwt(jwt);
-        userService.deleteUserById(id, actor);
+        userService.deleteUserById(id, actorId);
         return ResponseEntity.noContent().build();
     }
 
@@ -107,18 +96,16 @@ public class UserController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
     public ResponseEntity<EditUserResponse> getUserForEdit(
             @PathVariable Long id,
-            @AuthenticationPrincipal Jwt jwt
+            @CurrentActorId Long actorId
     ) {
-        AuthenticatedActor actor = authenticatedActorResolver.fromJwt(jwt);
-        return ResponseEntity.ok(userService.getUserForEdit(id, actor));
+        return ResponseEntity.ok(userService.getUserForEdit(id, actorId));
     }
 
     @GetMapping("/create-capabilities")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<CreateUserCapabilities> getCreateCapabilities(
-            @AuthenticationPrincipal Jwt jwt
+            @CurrentActorId Long actorId
     ) {
-        AuthenticatedActor actor = authenticatedActorResolver.fromJwt(jwt);
-        return ResponseEntity.ok(userService.getCreateCapabilities(actor));
+        return ResponseEntity.ok(userService.getCreateCapabilities(actorId));
     }
 }
