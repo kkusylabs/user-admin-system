@@ -157,6 +157,10 @@ public class UserAuthorizationService {
         deny("You do not have permission to delete users.");
     }
 
+    public boolean canDelete(User actor, User target) {
+        return getDeleteCapabilities(actor, target).canDelete();
+    }
+
     /**
      * Computes deletion capabilities for the actor relative to the target user.
      *

@@ -208,7 +208,7 @@ public class UserService {
         return userMapper.toListItemResponse(
                 targetUser,
                 userAuthorizationService.canEdit(actorUser, targetUser),
-                userAuthorizationService.getDeleteCapabilities(actorUser, targetUser)
+                userAuthorizationService.canDelete(actorUser, targetUser)
         );
     }
 

@@ -109,12 +109,12 @@ public final class UserMapper {
   public UserListItemResponse toListItemResponse(
             User user,
             boolean canEdit,
-            DeleteUserCapabilities deleteCapabilities
+            boolean canDelete
     ) {
         return new UserListItemResponse(
                 toDetailResponse(user),
                 canEdit,
-                deleteCapabilities
+                canDelete
         );
   }
 
