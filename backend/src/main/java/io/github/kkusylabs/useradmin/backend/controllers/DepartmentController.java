@@ -12,6 +12,26 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST controller for managing departments.
+ *
+ * <p>Provides CRUD endpoints for departments. Write operations are restricted
+ * to administrators, while read operations are available to authenticated users.</p>
+ *
+ * <p>The controller delegates all business logic to {@code DepartmentService}
+ * and relies on Spring Security and service-layer validation for authorization.</p>
+ *
+ * <h3>Endpoints</h3>
+ * <ul>
+ *   <li><b>POST /api/departments</b> – create department (admin only)</li>
+ *   <li><b>GET /api/departments</b> – list departments</li>
+ *   <li><b>GET /api/departments/{id}</b> – get department by id</li>
+ *   <li><b>PUT /api/departments/{id}</b> – update department (admin only)</li>
+ *   <li><b>DELETE /api/departments/{id}</b> – delete department (admin only)</li>
+ * </ul>
+ *
+ * @author kkusy
+ */
 @RestController
 @RequestMapping("/api/departments")
 public class DepartmentController {
@@ -21,6 +41,13 @@ public class DepartmentController {
         this.departmentService = departmentService;
     }
 
+    /**
+     * Creates a new department.
+     *
+     * @param request request payload containing department data
+     * @param actorId id of the current user
+     * @return the created department with permissions
+     */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<DepartmentListItemResponse> createDepartment(
@@ -31,6 +58,12 @@ public class DepartmentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdDepartment);
     }
 
+    /**
+     * Returns all departments.
+     *
+     * @param actorId id of the current user
+     * @return list of departments with permissions and create capability flag
+     */
     @GetMapping
     public ResponseEntity<DepartmentListResponse> getDepartments(
             @CurrentActorId Long actorId
@@ -38,6 +71,13 @@ public class DepartmentController {
         return ResponseEntity.ok(departmentService.getDepartments(actorId));
     }
 
+    /**
+     * Returns a single department by id.
+     *
+     * @param id      department id
+     * @param actorId id of the current user
+     * @return department details with permissions
+     */
     @GetMapping("/{id}")
     public ResponseEntity<DepartmentListItemResponse> getDepartment(
             @PathVariable Long id,
@@ -46,6 +86,14 @@ public class DepartmentController {
         return ResponseEntity.ok(departmentService.getDepartment(id, actorId));
     }
 
+    /**
+     * Updates an existing department.
+     *
+     * @param request request payload with updated data
+     * @param id      department id
+     * @param actorId id of the current user
+     * @return updated department with permissions
+     */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<DepartmentListItemResponse> updateDepartment(
@@ -59,6 +107,13 @@ public class DepartmentController {
         return ResponseEntity.ok(updatedDepartment);
     }
 
+    /**
+     * Deletes a department.
+     *
+     * @param id      department id
+     * @param actorId id of the current user
+     * @return empty response on success
+     */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<Void> deleteDepartment(

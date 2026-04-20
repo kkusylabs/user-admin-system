@@ -7,7 +7,17 @@ import jakarta.validation.constraints.Size;
 /**
  * Request payload for creating a department.
  *
- * @param name the department name (must be unique, not blank, max 50 characters)
+ * <p>Applies basic validation and input normalization before reaching the service layer.</p>
+ *
+ * <ul>
+ *   <li><b>name</b> – required, max 50 chars (uniqueness enforced in service layer)</li>
+ *   <li><b>description</b> – optional, max 255 chars</li>
+ * </ul>
+ *
+ * <p>Both fields are trimmed; blank descriptions become {@code null}.</p>
+ *
+ * @param name        department name
+ * @param description optional description
  * @author kkusy
  */
 public record CreateDepartmentRequest(

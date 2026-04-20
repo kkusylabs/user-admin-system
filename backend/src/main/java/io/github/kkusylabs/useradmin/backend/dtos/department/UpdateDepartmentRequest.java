@@ -8,9 +8,19 @@ import jakarta.validation.constraints.Size;
 /**
  * Request payload for updating a department.
  *
- * <p>Contains the fields that can be modified by the client.</p>
+ * <p>Applies validation and input normalization before updating an existing department.</p>
  *
- * @param name the updated department name (must not be blank, max 50 characters)
+ * <ul>
+ *   <li><b>name</b> – required, max 50 chars (uniqueness enforced in service layer)</li>
+ *   <li><b>description</b> – optional, max 255 chars</li>
+ *   <li><b>active</b> – required flag indicating whether the department is active</li>
+ * </ul>
+ *
+ * <p>Text fields are trimmed; blank descriptions become {@code null}.</p>
+ *
+ * @param name        department name
+ * @param description optional description
+ * @param active      active status
  * @author kkusy
  */
 public record UpdateDepartmentRequest(
@@ -24,8 +34,8 @@ public record UpdateDepartmentRequest(
         @NotNull
         Boolean active
 ) {
-        public UpdateDepartmentRequest {
-                name = StringNormalizer.trim(name);
-                description = StringNormalizer.trimToNull(description);
-        }
+    public UpdateDepartmentRequest {
+        name = StringNormalizer.trim(name);
+        description = StringNormalizer.trimToNull(description);
+    }
 }

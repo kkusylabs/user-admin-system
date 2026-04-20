@@ -12,20 +12,17 @@ import java.util.Objects;
 /**
  * Centralizes authorization and validation rules for department operations.
  *
- * <p>This service provides two complementary APIs:</p>
+ * <p>Provides two complementary APIs:</p>
  * <ul>
- *   <li><b>Capability checks</b> (e.g. {@code canCreate}) for UI hints and conditional rendering</li>
- *   <li><b>Validation methods</b> (e.g. {@code validateCreateRequest}) that enforce rules and throw on failure</li>
+ *   <li><b>Capability checks</b> ({@code can*}) for UI hints</li>
+ *   <li><b>Validation methods</b> ({@code validate*}) that enforce rules and throw on failure</li>
  * </ul>
  *
  * <p>Rules enforced:</p>
  * <ul>
  *   <li>Only administrators can create, update, or delete departments</li>
- *   <li>A department must have no users before it can be deleted</li>
+ *   <li>A department must be empty before it can be deleted</li>
  * </ul>
- *
- * <p>Callers should use {@code can*} methods for lightweight checks and always rely on
- * {@code validate*} methods before executing state-changing operations.</p>
  */
 @Component
 public class DepartmentAuthorizationService {
@@ -37,11 +34,9 @@ public class DepartmentAuthorizationService {
     }
 
     /**
-     * Returns whether the given user is allowed to create departments.
+     * Returns whether the user can create departments.
      *
-     * <p>Intended for UI-level checks. Does not throw.</p>
-     *
-     * @param actor the current user (may be {@code null})
+     * @param actor current user (may be {@code null})
      * @return {@code true} if the user is an administrator
      */
     public boolean canCreate(User actor) {
@@ -49,9 +44,10 @@ public class DepartmentAuthorizationService {
     }
 
     /**
-     * Returns whether the given user is allowed to update departments.
+     * Returns whether the user can update the given department.
      *
-     * @param actor the current user (may be {@code null})
+     * @param actor current user (may be {@code null})
+     * @param department target department
      * @return {@code true} if the user is an administrator
      */
     public boolean canUpdate(User actor, Department department) {
@@ -59,12 +55,12 @@ public class DepartmentAuthorizationService {
     }
 
     /**
-     * Returns whether the given user is allowed to delete departments in principle.
+     * Returns whether the user can delete the given department in principle.
      *
-     * <p>This does not check whether a specific department is deletable
-     * (e.g. whether it is empty).</p>
+     * <p>Does not check whether the department is empty.</p>
      *
-     * @param actor the current user (may be {@code null})
+     * @param actor current user (may be {@code null})
+     * @param department target department
      * @return {@code true} if the user is an administrator
      */
     public boolean canDelete(User actor, Department department) {
@@ -72,9 +68,9 @@ public class DepartmentAuthorizationService {
     }
 
     /**
-     * Validates that the given user can create a department.
+     * Validates that the user can create a department.
      *
-     * @param actor the current user
+     * @param actor current user
      * @throws InsufficientPermissionsException if the user is not an administrator
      */
     public void validateCreateRequest(User actor) {
@@ -83,11 +79,12 @@ public class DepartmentAuthorizationService {
         }
     }
 
+
     /**
-     * Validates that the given user can update the specified department.
+     * Validates that the user can update the given department.
      *
-     * @param actor the current user
-     * @param department the department to update
+     * @param actor current user
+     * @param department target department (must not be {@code null})
      * @throws IllegalArgumentException if {@code department} is {@code null}
      * @throws InsufficientPermissionsException if the user is not an administrator
      */
@@ -99,6 +96,18 @@ public class DepartmentAuthorizationService {
         }
     }
 
+
+    /**
+     * Validates that the user can delete the given department.
+     *
+     * <p>Also ensures the department has no users assigned.</p>
+     *
+     * @param actor current user
+     * @param department target department (must not be {@code null})
+     * @throws IllegalArgumentException if {@code department} is {@code null}
+     * @throws InsufficientPermissionsException if the user is not an administrator
+     * @throws DepartmentNotEmptyException if the department still has users
+     */
     public void validateDeleteRequest(User actor, Department department) {
         Objects.requireNonNull(department, "Department is required.");
 
@@ -111,10 +120,22 @@ public class DepartmentAuthorizationService {
         }
     }
 
+    /**
+     * Returns whether the given user is an administrator.
+     *
+     * @param actor user (may be {@code null})
+     * @return {@code true} if the user is admin
+     */
     private boolean isAdmin(User actor) {
         return actor != null && actor.isAdmin();
     }
 
+    /**
+     * Returns whether the department has any users assigned.
+     *
+     * @param department department
+     * @return {@code true} if at least one user belongs to the department
+     */
     private boolean hasUsers(Department department) {
         return userRepository.existsByDepartmentId(department.getId());
     }

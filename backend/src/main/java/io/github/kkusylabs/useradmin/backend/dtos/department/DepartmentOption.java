@@ -1,13 +1,18 @@
 package io.github.kkusylabs.useradmin.backend.dtos.department;
 
 /**
- * Projection for retrieving basic department information.
+ * Lightweight department reference.
  *
- * <p>Used by the repository layer to fetch only the fields required for
- * read operations, avoiding loading full {@code Department} entities.</p>
+ * <p>Contains only the fields needed for selection controls (e.g. dropdowns).</p>
  *
- * <p>This projection is intended for internal use and should be mapped to
- * API DTOs (e.g. {@code DepartmentOption}) before returning to clients.</p>
+ * <ul>
+ *   <li><b>id</b> – unique identifier</li>
+ *   <li><b>name</b> – display name</li>
+ * </ul>
+ *
+ * <p>Typically derived from a projection and mapped before returning to clients.</p>
+ *
+ * @author kkusy
  */
 public record DepartmentOption(
         Long id,
