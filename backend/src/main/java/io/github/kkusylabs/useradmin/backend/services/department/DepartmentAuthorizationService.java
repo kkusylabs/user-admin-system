@@ -1,7 +1,5 @@
 package io.github.kkusylabs.useradmin.backend.services.department;
 
-import io.github.kkusylabs.useradmin.backend.dtos.department.CreateDepartmentCapabilities;
-import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentCapabilities;
 import io.github.kkusylabs.useradmin.backend.exceptions.department.DepartmentNotEmptyException;
 import io.github.kkusylabs.useradmin.backend.exceptions.security.InsufficientPermissionsException;
 import io.github.kkusylabs.useradmin.backend.models.Department;
@@ -9,22 +7,25 @@ import io.github.kkusylabs.useradmin.backend.models.User;
 import io.github.kkusylabs.useradmin.backend.repositories.UserRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
+
 /**
- * Handles authorization and capability checks for department-related operations.
+ * Centralizes authorization and validation rules for department operations.
  *
- * <p>Provides two types of functionality:</p>
+ * <p>This service provides two complementary APIs:</p>
  * <ul>
- *     <li>Validation methods that enforce permissions and throw exceptions on failure</li>
- *     <li>Capability methods that describe what actions the current user is allowed to perform</li>
+ *   <li><b>Capability checks</b> (e.g. {@code canCreate}) for UI hints and conditional rendering</li>
+ *   <li><b>Validation methods</b> (e.g. {@code validateCreateRequest}) that enforce rules and throw on failure</li>
  * </ul>
  *
- * <p>Current rules:</p>
+ * <p>Rules enforced:</p>
  * <ul>
- *     <li>Only administrators can create, rename, or delete departments</li>
- *     <li>A department can only be deleted if it has no associated users</li>
+ *   <li>Only administrators can create, update, or delete departments</li>
+ *   <li>A department must have no users before it can be deleted</li>
  * </ul>
  *
- * @author kkusy
+ * <p>Callers should use {@code can*} methods for lightweight checks and always rely on
+ * {@code validate*} methods before executing state-changing operations.</p>
  */
 @Component
 public class DepartmentAuthorizationService {
@@ -36,82 +37,85 @@ public class DepartmentAuthorizationService {
     }
 
     /**
-     * Validates whether the actor can create a department.
+     * Returns whether the given user is allowed to create departments.
      *
-     * @throws InsufficientPermissionsException if the actor is not an administrator
+     * <p>Intended for UI-level checks. Does not throw.</p>
+     *
+     * @param actor the current user (may be {@code null})
+     * @return {@code true} if the user is an administrator
      */
-    public void validateCreate(User actor) {
-        requireAdmin(actor, "Only administrators can create departments.");
+    public boolean canCreate(User actor) {
+        return isAdmin(actor);
     }
 
     /**
-     * Validates whether the actor can rename a department.
+     * Returns whether the given user is allowed to update departments.
      *
-     * @throws InsufficientPermissionsException if the actor is not an administrator
+     * @param actor the current user (may be {@code null})
+     * @return {@code true} if the user is an administrator
      */
-    public void validateRename(User actor) {
-        requireAdmin(actor, "Only administrators can rename departments.");
+    public boolean canUpdate(User actor, Department department) {
+        return isAdmin(actor);
     }
 
     /**
-     * Validates whether the actor can delete a department.
+     * Returns whether the given user is allowed to delete departments in principle.
      *
-     * @throws InsufficientPermissionsException if the actor is not an administrator
-     * @throws DepartmentNotEmptyException      if the department still has associated users
+     * <p>This does not check whether a specific department is deletable
+     * (e.g. whether it is empty).</p>
+     *
+     * @param actor the current user (may be {@code null})
+     * @return {@code true} if the user is an administrator
      */
-    public void validateDelete(User actor, Department department) {
-        requireAdmin(actor, "Only administrators can delete departments.");
+    public boolean canDelete(User actor, Department department) {
+        return isAdmin(actor);
+    }
 
-        if (!isEmpty(department)) {
+    /**
+     * Validates that the given user can create a department.
+     *
+     * @param actor the current user
+     * @throws InsufficientPermissionsException if the user is not an administrator
+     */
+    public void validateCreateRequest(User actor) {
+        if (!isAdmin(actor)) {
+            throw new InsufficientPermissionsException("Only administrators can create departments.");
+        }
+    }
+
+    /**
+     * Validates that the given user can update the specified department.
+     *
+     * @param actor the current user
+     * @param department the department to update
+     * @throws IllegalArgumentException if {@code department} is {@code null}
+     * @throws InsufficientPermissionsException if the user is not an administrator
+     */
+    public void validateUpdateRequest(User actor, Department department) {
+        Objects.requireNonNull(department, "Department is required.");
+
+        if (!isAdmin(actor)) {
+            throw new InsufficientPermissionsException("Only administrators can update departments.");
+        }
+    }
+
+    public void validateDeleteRequest(User actor, Department department) {
+        Objects.requireNonNull(department, "Department is required.");
+
+        if (!isAdmin(actor)) {
+            throw new InsufficientPermissionsException("Only administrators can delete departments.");
+        }
+
+        if (hasUsers(department)) {
             throw new DepartmentNotEmptyException(department.getId());
         }
     }
 
-    /**
-     * Returns whether the actor can create departments.
-     */
-    public CreateDepartmentCapabilities getCreateCapabilities(User actor) {
-        return new CreateDepartmentCapabilities(actor != null && actor.isAdmin());
+    private boolean isAdmin(User actor) {
+        return actor != null && actor.isAdmin();
     }
 
-    /**
-     * Returns the capabilities of the actor for a given department.
-     *
-     * <p>Includes both allowed actions and reasons when an action is not permitted.</p>
-     */
-    public DepartmentCapabilities getCapabilities(User actor, Department department) {
-        boolean isAdmin = actor != null && actor.isAdmin();
-
-        if (!isAdmin) {
-            return new DepartmentCapabilities(
-                    false,
-                    false,
-                    "Only administrators can delete departments."
-            );
-        }
-
-        if (!isEmpty(department)) {
-            return new DepartmentCapabilities(
-                    true,
-                    false,
-                    "Cannot delete a department that still has users."
-            );
-        }
-
-        return new DepartmentCapabilities(
-                true,
-                true,
-                null
-        );
-    }
-
-    private boolean isEmpty(Department department) {
-        return !userRepository.existsByDepartmentId(department.getId());
-    }
-
-    private void requireAdmin(User actor, String message) {
-        if (actor == null || !actor.isAdmin()) {
-            throw new InsufficientPermissionsException();
-        }
+    private boolean hasUsers(Department department) {
+        return userRepository.existsByDepartmentId(department.getId());
     }
 }

@@ -1,6 +1,8 @@
 package io.github.kkusylabs.useradmin.backend.dtos.department;
 
+import io.github.kkusylabs.useradmin.backend.utils.StringNormalizer;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -14,6 +16,16 @@ import jakarta.validation.constraints.Size;
 public record UpdateDepartmentRequest(
         @NotBlank
         @Size(max = 50)
-        String name
+        String name,
+
+        @Size(max = 255)
+        String description,
+
+        @NotNull
+        Boolean active
 ) {
+        public UpdateDepartmentRequest {
+                name = StringNormalizer.trim(name);
+                description = StringNormalizer.trimToNull(description);
+        }
 }

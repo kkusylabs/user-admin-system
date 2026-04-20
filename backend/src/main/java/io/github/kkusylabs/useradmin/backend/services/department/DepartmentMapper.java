@@ -1,8 +1,10 @@
 package io.github.kkusylabs.useradmin.backend.services.department;
 
-import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentResponse;
+import io.github.kkusylabs.useradmin.backend.dtos.department.CreateDepartmentRequest;
+import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentDetailsResponse;
+import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentListItemResponse;
+import io.github.kkusylabs.useradmin.backend.dtos.department.UpdateDepartmentRequest;
 import io.github.kkusylabs.useradmin.backend.models.Department;
-import io.github.kkusylabs.useradmin.backend.models.User;
 import org.springframework.stereotype.Component;
 
 /**
@@ -15,25 +17,39 @@ import org.springframework.stereotype.Component;
 @Component
 public class DepartmentMapper {
 
-    private final DepartmentAuthorizationService authorizationService;
 
-    public DepartmentMapper(DepartmentAuthorizationService authorizationService) {
-        this.authorizationService = authorizationService;
+    public DepartmentMapper() {
     }
 
-    /**
-     * Converts a department to a response DTO, including capabilities
-     * for the given actor.
-     *
-     * @param department the department to convert
-     * @param actor      the current user (used to determine capabilities)
-     * @return the mapped response
-     */
-    public DepartmentResponse toResponse(Department department, User actor) {
-        return new DepartmentResponse(
+    public Department fromCreateRequest(CreateDepartmentRequest request) {
+        Department department = new Department();
+        department.setName(request.name());
+        department.setDescription(request.description());
+        return department;
+    }
+
+    public DepartmentDetailsResponse toDetailsResponse(Department department) {
+        return new DepartmentDetailsResponse(
                 department.getId(),
                 department.getName(),
-                authorizationService.getCapabilities(actor, department)
+                department.getDescription(),
+                department.isActive()
         );
+    }
+
+
+    public DepartmentListItemResponse toListItemResponse(Department department,
+                                                         boolean canEdit, boolean canDelete) {
+        return new DepartmentListItemResponse(
+                toDetailsResponse(department),
+                canEdit,
+                canDelete
+        );
+    }
+
+    public void updateDepartment(Department department, UpdateDepartmentRequest request) {
+        department.setName(request.name());
+        department.setDescription(request.description());
+        department.setActive(request.active());
     }
 }

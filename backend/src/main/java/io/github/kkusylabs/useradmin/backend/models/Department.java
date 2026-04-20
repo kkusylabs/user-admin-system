@@ -27,6 +27,12 @@ public class Department extends AuditableEntity {
     @Column(nullable = false, unique = true)
     private String name;
 
+    @Column
+    private String description;
+
+    @Column(nullable = false)
+    private boolean active = true;
+
     /**
      * Creates an empty department instance.
      * <p>
@@ -60,6 +66,22 @@ public class Department extends AuditableEntity {
      */
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     /**

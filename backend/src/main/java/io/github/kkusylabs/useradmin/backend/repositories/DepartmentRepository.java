@@ -1,8 +1,8 @@
 package io.github.kkusylabs.useradmin.backend.repositories;
 
-import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentSummary;
 import io.github.kkusylabs.useradmin.backend.models.Department;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,5 +31,14 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
      */
     boolean existsByNameIgnoreCase(String name);
 
-    List<DepartmentSummary> findAllBy();
+    @Query("SELECT d FROM Department d ORDER BY LOWER(d.name)")
+    List<Department> findAllOrderByNameIgnoreCase();
+
+    @Query("""
+                SELECT d
+                FROM Department d
+                WHERE d.active = true
+                ORDER BY LOWER(d.name)
+            """)
+    List<Department> findActiveOrderByNameIgnoreCase();
 }
