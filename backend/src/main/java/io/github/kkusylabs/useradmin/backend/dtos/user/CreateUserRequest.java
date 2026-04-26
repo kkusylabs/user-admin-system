@@ -20,7 +20,7 @@ import jakarta.validation.constraints.*;
 public record CreateUserRequest(
         @NotBlank
         @Size(max = 50)
-        @Pattern(regexp = "^[a-zA-Z0-9._-]+$")
+        @Pattern(regexp = "^[a-z0-9._-]+$")
         String username,
 
         @NotBlank
@@ -43,6 +43,7 @@ public record CreateUserRequest(
         String jobTitle,
 
         @NotNull
+        @Positive
         Long departmentId,
 
         @NotNull
@@ -50,7 +51,7 @@ public record CreateUserRequest(
 ) {
     public CreateUserRequest {
         username = StringNormalizer.normalizeUsername(username);
-        fullName = StringNormalizer.trim(fullName);
+        fullName = StringNormalizer.trimToNull(fullName);
         email = StringNormalizer.normalizeEmail(email);
         phone = StringNormalizer.normalizePhone(phone);
         jobTitle = StringNormalizer.trimToNull(jobTitle);

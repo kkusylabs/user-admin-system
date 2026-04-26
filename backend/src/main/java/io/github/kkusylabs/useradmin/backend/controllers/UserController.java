@@ -93,7 +93,6 @@ public class UserController {
     }
 
     @GetMapping("/{id}/edit")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
     public ResponseEntity<EditUserResponse> getUserEditData(
             @PathVariable Long id,
             @CurrentActorId Long actorId
@@ -107,5 +106,14 @@ public class UserController {
             @CurrentActorId Long actorId
     ) {
         return ResponseEntity.ok(userService.getCreateUserCapabilities(actorId));
+    }
+
+    @GetMapping("/delete-capabilities/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<DeleteUserCapabilities> getDeleteUserCapabilities(
+            @PathVariable Long id,
+            @CurrentActorId Long actorId
+    ) {
+        return ResponseEntity.ok(userService.getDeleteUserCapabilities(id, actorId));
     }
 }

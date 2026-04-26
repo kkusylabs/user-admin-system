@@ -11,6 +11,7 @@ import io.github.kkusylabs.useradmin.backend.models.Department;
 import io.github.kkusylabs.useradmin.backend.models.User;
 import io.github.kkusylabs.useradmin.backend.repositories.DepartmentRepository;
 import io.github.kkusylabs.useradmin.backend.repositories.UserRepository;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -41,6 +42,7 @@ public class UserService {
     private final UserMapper userMapper;
     private final UserAuthorizationService userAuthorizationService;
     private final PasswordEncoder passwordEncoder;
+    private final UpdateUserValidator updateUserValidator;
 
     /**
      * Creates a new {@code UserService}.
@@ -55,12 +57,14 @@ public class UserService {
                        DepartmentRepository departmentRepository,
                        UserMapper userMapper,
                        UserAuthorizationService userAuthorizationService,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       UpdateUserValidator updateUserValidator) {
         this.userRepository = userRepository;
         this.departmentRepository = departmentRepository;
         this.userMapper = userMapper;
         this.userAuthorizationService = userAuthorizationService;
         this.passwordEncoder = passwordEncoder;
+        this.updateUserValidator = updateUserValidator;
     }
 
     /**
@@ -91,11 +95,12 @@ public class UserService {
         }
 
         Department department = getRequiredDepartment(request.departmentId());
-        userAuthorizationService.validateCreation(actor, request.role(), department);
-        User newUser = userMapper.fromCreateRequest(request, department);
-        newUser.setPasswordHash(passwordEncoder.encode(request.password()));
-        User savedUser = userRepository.save(newUser);
-        return toUserListItemResponse(actor, savedUser);
+        userAuthorizationService.validateCreateRequest(actor, request.role(), department);
+        User user = userMapper.fromCreateRequest(request, department);
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        user = userRepository.save(user);
+
+        return toUserListItemResponse(user, actor);
     }
 
     /**
@@ -111,7 +116,7 @@ public class UserService {
     public UserListResponse getUsers(Pageable pageable, Long actorId) {
         User actor = getRequiredActor(actorId);
         Page<UserListItemResponse> page = userRepository.findAll(pageable)
-                .map(targetUser -> toUserListItemResponse(actor, targetUser));
+                .map(targetUser -> toUserListItemResponse(targetUser, actor));
 
         return new UserListResponse(
                 PagedResponse.from(page),
@@ -132,7 +137,7 @@ public class UserService {
     public UserListItemResponse getUser(Long targetUserId, Long actorId) {
         User actor = getRequiredActor(actorId);
         User targetUser = getRequiredTargetUser(targetUserId);
-        return toUserListItemResponse(actor, targetUser);
+        return toUserListItemResponse(targetUser, actor);
     }
 
     @Transactional(readOnly = true)
@@ -143,6 +148,17 @@ public class UserService {
         return userMapper.toEditResponse(
                 targetUser,
                 userAuthorizationService.getUpdateCapabilities(actor, targetUser));
+    }
+
+    @Transactional
+    public UserListItemResponse updateUser(Long targetUserId, UpdateUserRequest request, Long actorId) {
+        User actor = getRequiredActor(actorId);
+        updateUserValidator.validate(request);
+        User targetUser = getRequiredTargetUser(targetUserId);
+        Department requestedDepartment = resolveRequestedDepartment(request.departmentId());
+        userAuthorizationService.validateUpdateRequest(actor, targetUser, request, requestedDepartment);
+        userMapper.updateUser(targetUser, request, requestedDepartment);
+        return toUserListItemResponse(targetUser, actor);
     }
 
     /**
@@ -159,7 +175,7 @@ public class UserService {
     public void deleteUser(Long targetUserId, Long actorId) {
         User actor = getRequiredActor(actorId);
         User targetUser = getRequiredTargetUser(targetUserId);
-        userAuthorizationService.validateDeletion(actor, targetUser);
+        userAuthorizationService.validateDeletionRequest(actor, targetUser);
         userRepository.delete(targetUser);
     }
 
@@ -167,6 +183,13 @@ public class UserService {
     public CreateUserCapabilities getCreateUserCapabilities(Long actorId) {
         User actor = getRequiredActor(actorId);
         return userAuthorizationService.getCreateCapabilities(actor);
+    }
+
+    @Transactional(readOnly = true)
+    public DeleteUserCapabilities getDeleteUserCapabilities(Long targetUserId, Long actorId) {
+        User actor = getRequiredActor(actorId);
+        User targetUser = getRequiredTargetUser(targetUserId);
+        return userAuthorizationService.getDeleteCapabilities(actor, targetUser);
     }
 
     private User getRequiredActor(Long actorId) {
@@ -191,12 +214,26 @@ public class UserService {
                 .orElseThrow(() -> new DepartmentNotFoundException(departmentId));
     }
 
-    private UserListItemResponse toUserListItemResponse(User actorUser, User targetUser) {
+    private UserListItemResponse toUserListItemResponse(User targetUser, User actorUser) {
         return userMapper.toListItemResponse(
                 targetUser,
-                userAuthorizationService.canEdit(actorUser, targetUser),
+                userAuthorizationService.canUpdate(actorUser, targetUser),
                 userAuthorizationService.canDelete(actorUser, targetUser)
         );
+    }
+
+    private Department resolveRequestedDepartment(JsonNullable<Long> departmentIdNullable) {
+        Department requestedDepartment = null;
+
+        if (departmentIdNullable.isPresent()) {
+            Long departmentId = departmentIdNullable.orElse(null);
+
+            if (departmentId != null) {
+                requestedDepartment = getRequiredDepartment(departmentId);
+            }
+        }
+
+        return requestedDepartment;
     }
 
 }

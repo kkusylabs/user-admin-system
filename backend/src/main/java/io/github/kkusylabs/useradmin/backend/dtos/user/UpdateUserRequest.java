@@ -2,8 +2,7 @@ package io.github.kkusylabs.useradmin.backend.dtos.user;
 
 import io.github.kkusylabs.useradmin.backend.models.Role;
 import io.github.kkusylabs.useradmin.backend.utils.StringNormalizer;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Size;
+import org.openapitools.jackson.nullable.JsonNullable;
 
 /**
  * Request payload for updating a user.
@@ -20,29 +19,36 @@ import jakarta.validation.constraints.Size;
  * @author kkusy
  */
 public record UpdateUserRequest(
-        @Size(max = 100)
-        String fullName,
-
-        @Email
-        @Size(max = 255)
-        String email,
-
-        @Size(max = 30)
-        String phone,
-
-        @Size(max = 100)
-        String jobTitle,
-
-        Boolean active,
-
-        Long departmentId,
-
-        Role role
+        JsonNullable<String> fullName,
+        JsonNullable<String> email,
+        JsonNullable<String> phone,
+        JsonNullable<String> jobTitle,
+        JsonNullable<Boolean> active,
+        JsonNullable<Long> departmentId,
+        JsonNullable<Role> role
 ) {
         public UpdateUserRequest {
-                fullName = StringNormalizer.trim(fullName);
-                phone = StringNormalizer.trim(phone);
-                jobTitle = StringNormalizer.trim(jobTitle);
-                email = StringNormalizer.trim(email);
+                fullName = mapNullable(fullName, StringNormalizer::trimToNull);
+                phone = mapNullable(phone, StringNormalizer::normalizePhone);
+                email = mapNullable(email, StringNormalizer::normalizeEmail);
+                jobTitle = mapNullable(jobTitle, StringNormalizer::trimToNull);
+
+                role = normalizeWrapper(role);
+                departmentId = normalizeWrapper(departmentId);
+                active = normalizeWrapper(active);
+        }
+
+        private static <T> JsonNullable<T> mapNullable(
+                JsonNullable<T> value,
+                java.util.function.UnaryOperator<T> mapper
+        ) {
+                if (value == null || value.isUndefined()) {
+                        return JsonNullable.undefined();
+                }
+                return JsonNullable.of(mapper.apply(value.orElse(null)));
+        }
+
+        private static <T> JsonNullable<T> normalizeWrapper(JsonNullable<T> value) {
+                return value == null ? JsonNullable.undefined() : value;
         }
 }

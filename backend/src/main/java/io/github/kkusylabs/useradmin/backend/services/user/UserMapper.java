@@ -55,32 +55,32 @@ public final class UserMapper {
      * @param requestedDepartment the resolved department to assign, or {@code null}
      *                            if no department change was requested
      */
-    public void updateEntity(User user, UpdateUserRequest request, Department requestedDepartment) {
-        if (request.fullName() != null) {
-            user.setFullName(request.fullName());
+    public void updateUser(User user, UpdateUserRequest request, Department requestedDepartment) {
+        if (request.fullName().isPresent())  {
+            user.setFullName(request.fullName().get());
         }
 
-        if (request.email() != null) {
-            user.setEmail(request.email());
+        if (request.email().isPresent()) {
+            user.setEmail(request.email().get());
         }
 
-        if (request.phone() != null) {
-            user.setPhone(request.phone());
+        if (request.phone().isPresent()) {
+            user.setPhone(request.phone().orElse(null));
         }
 
-        if (request.jobTitle() != null) {
-            user.setJobTitle(request.jobTitle());
+        if (request.jobTitle().isPresent()) {
+            user.setJobTitle(request.jobTitle().orElse(null));
         }
 
-        if (request.active() != null) {
-            user.setActive(request.active());
+        if (request.active().isPresent()) {
+            user.setActive(request.active().get());
         }
 
-        if (request.role() != null) {
-            user.setRole(request.role());
+        if (request.role().isPresent()) {
+            user.setRole(request.role().get());
         }
 
-        if (requestedDepartment != null) {
+        if (request.departmentId().isPresent()) {
             user.setDepartment(requestedDepartment);
         }
     }

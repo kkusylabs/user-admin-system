@@ -43,7 +43,8 @@ public class StringNormalizer {
      * @return normalized email, or {@code null} if blank or {@code null}
      */
     public static String normalizeEmail(String value) {
-        return value == null ? null : value.trim().toLowerCase(Locale.ROOT);
+        String email = trimToNull(value);
+        return email == null ? null : email.toLowerCase(Locale.ROOT);
     }
 
     /**
@@ -53,11 +54,17 @@ public class StringNormalizer {
      * @return normalized username, or {@code null} if input is {@code null}
      */
     public static String normalizeUsername(String value) {
-        return value == null ? null : value.trim().toLowerCase(Locale.ROOT);
+        String username = trimToNull(value);
+        return username == null ? null : username.toLowerCase(Locale.ROOT);
     }
 
     public static String normalizePhone(String value) {
         String phone = trimToNull(value);
-        return phone == null ? null : phone.replaceAll("[^0-9+]", "");
+        if (phone == null) return null;
+
+        String normalized = phone.replaceAll("[^0-9+]", "");
+
+        // collapse invalid results
+        return normalized.isEmpty() ? null : normalized;
     }
 }

@@ -253,20 +253,12 @@ public class User extends AuditableEntity {
     }
 
     /**
-     * Compares this user to another object for equality.
-     * <p>
-     * Equality is based solely on the {@code id}. Two users are considered equal
-     * if they represent the same persisted entity.
-     * </p>
+     * Sets whether the user is active.
      *
-     * @param o the object to compare with
-     * @return {@code true} if both objects have the same non-null identifier; {@code false} otherwise
+     * @param active {@code true} to mark the user as active; {@code false} otherwise
      */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof User that)) return false;
-        return id != null && Objects.equals(id, that.id);
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     /**
@@ -300,25 +292,26 @@ public class User extends AuditableEntity {
     }
 
     /**
-     * Returns a hash code for this user.
-     * <p>
-     * The hash code is based on the class type to remain stable before and after
-     * persistence when the {@code id} may not yet be assigned.
-     * </p>
+     * Equality based on {@code id}.
      *
-     * @return a hash code value for this object
+     * @param o other object
+     * @return {@code true} if same persisted entity
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User that)) return false;
+        return id != null && Objects.equals(id, that.id);
+    }
+
+    /**
+     * Stable hash code independent of persistence state.
+     *
+     * @return hash code
      */
     @Override
     public int hashCode() {
         return getClass().hashCode();
     }
 
-    /**
-     * Sets whether the user is active.
-     *
-     * @param active {@code true} to mark the user as active; {@code false} otherwise
-     */
-    public void setActive(boolean active) {
-        this.active = active;
-    }
 }

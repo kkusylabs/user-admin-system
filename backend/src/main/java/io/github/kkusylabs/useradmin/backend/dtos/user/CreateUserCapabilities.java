@@ -7,9 +7,19 @@ import java.util.List;
 import java.util.Set;
 
 public record CreateUserCapabilities(
-        boolean canCreateUser,
+
+        boolean canCreate,
         Set<Role> assignableRoles,
         List<DepartmentOption> assignableDepartments,
-        Role defaultRole
+        String reason
+
 ) {
+    public static CreateUserCapabilities none(String reason) {
+        return new CreateUserCapabilities(
+                false,
+                Set.of(),
+                List.of(),
+                reason
+        );
+    }
 }
