@@ -1,7 +1,10 @@
 package io.github.kkusylabs.useradmin.backend.services.user;
 
 import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentOption;
-import io.github.kkusylabs.useradmin.backend.dtos.user.*;
+import io.github.kkusylabs.useradmin.backend.dtos.user.CreateUserCapabilities;
+import io.github.kkusylabs.useradmin.backend.dtos.user.DeleteUserCapabilities;
+import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserCapabilities;
+import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserRequest;
 import io.github.kkusylabs.useradmin.backend.exceptions.ValidationException;
 import io.github.kkusylabs.useradmin.backend.exceptions.department.InactiveDepartmentException;
 import io.github.kkusylabs.useradmin.backend.exceptions.security.InsufficientPermissionsException;
@@ -11,12 +14,11 @@ import io.github.kkusylabs.useradmin.backend.models.Role;
 import io.github.kkusylabs.useradmin.backend.models.User;
 import io.github.kkusylabs.useradmin.backend.repositories.DepartmentRepository;
 import io.github.kkusylabs.useradmin.backend.repositories.UserRepository;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.stereotype.Component;
 
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Service responsible for enforcing authorization rules for {@link User} operations.
@@ -56,6 +58,8 @@ public class UserAuthorizationService {
     }
 
     private CreateUserPolicy getCreatePolicy(User actor) {
+        requirePresent(actor, "actor", "actor is required.");
+
         if (actor.isAdmin()) {
             return CreateUserPolicy.allowed();
         }
@@ -78,8 +82,6 @@ public class UserAuthorizationService {
     }
 
     public void validateCreateRequest(User actor, Role role, Department department) {
-        requirePresent(actor, "actor", "Actor is required.");
-
         CreateUserPolicy policy = getCreatePolicy(actor);
         requirePermission(policy.canCreate(), policy.reason());
 
@@ -88,16 +90,20 @@ public class UserAuthorizationService {
     }
 
     private void validateCreateRole(User actor, Role role) {
-        requirePresent(role, "role", "Role is required.");
-
+        requirePresent(role, "role", "role is required.");
         requirePermission(
                 canAssignRoleForCreate(actor, role),
                 "You do not have permission to assign this role."
         );
     }
 
+    private boolean canAssignRoleForCreate(User actor, Role role) {
+        Set<Role> assignableRoles = getAssignableRolesForCreate(actor);
+        return assignableRoles.contains(role);
+    }
+
     private void validateCreateDepartment(User actor, Department department) {
-        requirePresent(department, "department", "Department is required.");
+        requirePresent(department, "department", "department is required.");
 
         if (!department.isActive()) {
             throw new InactiveDepartmentException(department.getId());
@@ -105,11 +111,6 @@ public class UserAuthorizationService {
 
         requirePermission(canAssignDepartmentForCreate(actor, department),
                 "You do not have permission to assign this department.");
-    }
-
-    private boolean canAssignRoleForCreate(User actor, Role role) {
-        Set<Role> assignableRoles = getAssignableRolesForCreate(actor);
-        return assignableRoles.contains(role);
     }
 
     private boolean canAssignDepartmentForCreate(User actor, Department department) {
@@ -128,8 +129,6 @@ public class UserAuthorizationService {
     }
 
     public CreateUserCapabilities getCreateCapabilities(User actor) {
-        requirePresent(actor, "actor", "Actor is required.");
-
         CreateUserPolicy policy = getCreatePolicy(actor);
         if (!policy.canCreate()) {
             return CreateUserCapabilities.none(policy.reason());
@@ -260,16 +259,40 @@ public class UserAuthorizationService {
     public boolean canUpdate(User actor, User target) {
         return getUpdatePolicy(actor, target).canUpdate();
     }
+
+    public UpdateUserPolicy getUpdatePolicy(User actor, User target) {
+        requirePresent(actor, "actor", "Actor is required.");
+        requirePresent(target, "target", "Target user is required.");
+
+        // Cannot update yourself beyond allowed scope (handled below, but keep this first for clarity if needed)
+        if (sameUser(actor, target)) {
+            return actor.isAdmin()
+                    ? UpdateUserPolicy.adminSelf()
+                    : UpdateUserPolicy.selfProfileOnly();
+        }
+
+        // Admins can update everything (with role restrictions handled via roleOptions)
+        if (actor.isAdmin()) {
+            return UpdateUserPolicy.admin();
+        }
+
+        // Managers can update basic users in their own department
+        if (actor.isManager() && canManageUser(actor, target)) {
+            return UpdateUserPolicy.managerManagedUser();
+        }
+
+        // Everything else is denied
+        return UpdateUserPolicy.denied(
+                "You do not have permission to update this user."
+        );
+    }
+
     public void validateUpdateRequest(
             User actor,
             User target,
             UpdateUserRequest request,
-            Department requestedDepartment
+            Department department
     ) {
-        Objects.requireNonNull(actor, "Actor is required.");
-        Objects.requireNonNull(target, "Target user is required.");
-        Objects.requireNonNull(request, "Request is required.");
-
         UpdateUserPolicy policy = getUpdatePolicy(actor, target);
 
         requirePermission(
@@ -277,17 +300,16 @@ public class UserAuthorizationService {
                 policy.reason()
         );
 
-        validateProfileChanges(policy, request, target);
-        validateJobTitleChange(policy, request, target);
-        validateRoleChange(policy, request, target);
-        validateDepartmentChange(actor, policy, request, target, requestedDepartment);
-        validateActiveChange(policy, request, target);
+        validateProfileChanges(policy, request);
+        validateJobTitleChange(policy, request);
+        validateRoleChange(policy, request, actor, target);
+        validateDepartmentChange(policy, request, department);
+        validateActiveChange(policy, request);
     }
 
     private void validateProfileChanges(
             UpdateUserPolicy policy,
-            UpdateUserRequest request,
-            User target
+            UpdateUserRequest request
     ) {
         boolean profileChangeRequested =
                 request.fullName().isPresent()
@@ -306,8 +328,7 @@ public class UserAuthorizationService {
 
     private void validateJobTitleChange(
             UpdateUserPolicy policy,
-            UpdateUserRequest request,
-            User target
+            UpdateUserRequest request
     ) {
         if (!request.jobTitle().isPresent()) {
             return;
@@ -322,39 +343,50 @@ public class UserAuthorizationService {
     private void validateRoleChange(
             UpdateUserPolicy policy,
             UpdateUserRequest request,
+            User actor,
             User target
     ) {
         if (!request.role().isPresent()) {
             return;
         }
 
-        Role requestedRole = request.role().orElse(null);
-
         requirePermission(
                 policy.canEditRole(),
                 "You do not have permission to change this user's role."
         );
 
-        requirePermission(
-                requestedRole != null,
-                "role cannot be null."
-        );
+        Role role = request.role().orElse(null);
+        requirePresent(role, "role", "role is required.");
 
         requirePermission(
-                policy.assignableRoles().contains(requestedRole),
+                canAssignRoleForUpdate(actor, target, role),
                 "You do not have permission to assign this role."
         );
     }
 
+    private boolean canAssignRoleForUpdate(User actor, User target, Role role) {
+        Set<Role> assignableRoles = getAssignableRolesForUpdate(actor, target);
+        return assignableRoles.contains(role);
+    }
+
     private void validateDepartmentChange(
-            User actor,
             UpdateUserPolicy policy,
             UpdateUserRequest request,
-            User target,
-            Department requestedDepartment
+            Department department
     ) {
         if (!request.departmentId().isPresent()) {
             return;
+        }
+
+        Long requestedId = request.departmentId().orElse(null);
+        requirePresent(requestedId, "departmentId", "departmentId cannot be null.");
+        requirePresent(department, "departmentId", "departmentId is invalid.");
+
+        if (!Objects.equals(department.getId(), requestedId)) {
+            throw ValidationException.field(
+                    "departmentId",
+                    "departmentId does not match resolved department."
+            );
         }
 
         requirePermission(
@@ -362,52 +394,14 @@ public class UserAuthorizationService {
                 "You do not have permission to change this user's department."
         );
 
-        requirePermission(
-                requestedDepartment != null,
-                "departmentId is invalid."
-        );
-
-        requirePermission(
-                requestedDepartment.isActive(),
-                "You may only assign users to an active department."
-        );
-
-        requirePermission(
-                canAssignDepartmentForUpdate(actor, target, requestedDepartment),
-                "You do not have permission to assign this department."
-        );
-    }
-
-    private boolean canAssignDepartmentForUpdate(
-            User actor,
-            User target,
-            Department requestedDepartment
-    ) {
-        Objects.requireNonNull(actor, "Actor is required.");
-        Objects.requireNonNull(target, "Target user is required.");
-        Objects.requireNonNull(requestedDepartment, "Requested department is required.");
-
-        // Admins can assign to any department (active check handled elsewhere)
-        if (actor.isAdmin()) {
-            return true;
+        if (!department.isActive()) {
+            throw new InactiveDepartmentException(department.getId());
         }
-
-        // Managers can only assign basic users within their own department
-        if (actor.isManager() && canManageBasicUserInOwnDepartment(actor, target)) {
-            Department actorDepartment = actor.getDepartment();
-
-            return actorDepartment != null
-                    && actorDepartment.isActive()
-                    && actorDepartment.getId().equals(requestedDepartment.getId());
-        }
-
-        return false;
     }
 
     private void validateActiveChange(
             UpdateUserPolicy policy,
-            UpdateUserRequest request,
-            User target
+            UpdateUserRequest request
     ) {
         if (!request.active().isPresent()) {
             return;
@@ -418,25 +412,28 @@ public class UserAuthorizationService {
                 "You do not have permission to change this user's active status."
         );
 
-        requirePermission(
-                request.active().orElse(null) != null,
-                "active cannot be null."
-        );
+        Boolean active = request.active().orElse(null);
+        requirePresent(active, "active", "active is required");
     }
 
     public UpdateUserCapabilities getUpdateCapabilities(User actor, User target) {
-        Objects.requireNonNull(actor, "Actor is required.");
-        Objects.requireNonNull(target, "Target user is required.");
-
         UpdateUserPolicy policy = getUpdatePolicy(actor, target);
 
         if (!policy.canUpdate()) {
             return UpdateUserCapabilities.none(policy.reason());
         }
 
-        List<DepartmentOption> departmentOptions = policy.canEditDepartment()
-                ? getSelectableDepartmentOptionsForUpdate(actor, target)
-                : getCurrentDepartmentOption(target.getDepartment());
+        List<DepartmentOption> departmentOptions = getDepartmentOptionsForUpdate(
+                actor,
+                target,
+                policy
+        );
+
+        Set<Role> roleOptions = getRoleOptionsForUpdate(
+                actor,
+                target,
+                policy
+        );
 
         return new UpdateUserCapabilities(
                 true,
@@ -445,80 +442,66 @@ public class UserAuthorizationService {
                 policy.canEditRole(),
                 policy.canEditDepartment(),
                 policy.canEditActive(),
-                policy.assignableRoles(),
+                roleOptions,
                 departmentOptions,
                 null
         );
     }
 
-    public UpdateUserPolicy getUpdatePolicy(User actor, User target) {
-        Objects.requireNonNull(actor, "Actor is required.");
-        Objects.requireNonNull(target, "Target user is required.");
-
-        // Cannot update yourself beyond allowed scope (handled below, but keep this first for clarity if needed)
-        if (sameUser(actor, target)) {
-            return UpdateUserPolicy.selfProfileOnly();
+    private List<DepartmentOption> getDepartmentOptionsForUpdate(
+            User actor,
+            User target,
+            UpdateUserPolicy policy
+    ) {
+        if (!policy.canEditDepartment()) {
+            return getCurrentDepartmentOption(target.getDepartment());
         }
 
-        // Admins can update everything (with role restrictions handled via assignableRoles)
-        if (actor.isAdmin()) {
-            return UpdateUserPolicy.admin(
-                    getAssignableRolesForAdmin(actor, target)
-            );
-        }
-
-        // Managers can update basic users in their own department
-        if (actor.isManager() && canManageBasicUserInOwnDepartment(actor, target)) {
-            return UpdateUserPolicy.managerManagedUser();
-        }
-
-        // Everything else is denied
-        return UpdateUserPolicy.denied(
-                "You do not have permission to update this user."
+        return includeCurrentDepartmentIfMissing(
+                getAssignableDepartmentOptionsForUpdate(actor, target),
+                target.getDepartment()
         );
     }
 
-    private Set<Role> getAssignableRolesForAdmin(User actor, User target) {
-        Objects.requireNonNull(actor, "Actor is required.");
-        Objects.requireNonNull(target, "Target user is required.");
-
-        Set<Role> roles = EnumSet.of(Role.ADMIN, Role.MANAGER, Role.USER);
-
-        // Prevent removing admin role from the last active admin
-        if (target.isAdmin() && wouldLeaveSystemWithoutActiveAdmin(target)) {
-            roles.remove(Role.ADMIN);
-        }
-
-        // Prevent admin from removing their own admin role (optional rule)
-        if (sameUser(actor, target)) {
-            roles.remove(Role.ADMIN);
-        }
-
-        return roles;
-    }
-
-    private List<DepartmentOption> getSelectableDepartmentOptionsForUpdate(User actor, User target) {
-        Objects.requireNonNull(actor, "Actor is required.");
-        Objects.requireNonNull(target, "Target user is required.");
-
-        // Admins can assign to all active departments
+    private List<DepartmentOption> getAssignableDepartmentOptionsForUpdate(
+            User actor,
+            User target
+    ) {
         if (actor.isAdmin()) {
-            return departmentRepository.findAll().stream()
-                    .filter(Department::isActive)
+            return departmentRepository.findActiveOrderByNameIgnoreCase().stream()
                     .map(d -> new DepartmentOption(d.getId(), d.getName()))
                     .toList();
         }
 
-        // Managers can only assign within their own active department (if allowed)
-        if (actor.isManager() && canManageBasicUserInOwnDepartment(actor, target)) {
-            Department dept = actor.getDepartment();
+        if (actor.isManager() && canManageUser(actor, target)) {
+            Department department = actor.getDepartment();
 
-            if (dept != null && dept.isActive()) {
-                return List.of(new DepartmentOption(dept.getId(), dept.getName()));
+            if (department != null && department.isActive()) {
+                return List.of(new DepartmentOption(department.getId(), department.getName()));
             }
         }
 
         return List.of();
+    }
+
+    private List<DepartmentOption> includeCurrentDepartmentIfMissing(
+            List<DepartmentOption> options,
+            Department currentDepartment
+    ) {
+        if (currentDepartment == null) {
+            return options;
+        }
+
+        boolean alreadyIncluded = options.stream()
+                .anyMatch(option -> Objects.equals(option.id(), currentDepartment.getId()));
+
+        if (alreadyIncluded) {
+            return options;
+        }
+
+        List<DepartmentOption> result = new ArrayList<>(options);
+        result.add(new DepartmentOption(currentDepartment.getId(), currentDepartment.getName()));
+        return result;
     }
 
     private List<DepartmentOption> getCurrentDepartmentOption(Department department) {
@@ -529,35 +512,56 @@ public class UserAuthorizationService {
         return List.of(new DepartmentOption(department.getId(), department.getName()));
     }
 
-    private boolean canManageBasicUserInOwnDepartment(User actor, User target) {
-        Objects.requireNonNull(actor, "Actor is required.");
-        Objects.requireNonNull(target, "Target user is required.");
-
-        // Actor must be a manager
-        if (!actor.isManager()) {
-            return false;
+    private Set<Role> getRoleOptionsForUpdate(
+            User actor,
+            User target,
+            UpdateUserPolicy policy
+    ) {
+        if (!policy.canEditRole()) {
+            return getCurrentRoleOption(target.getRole());
         }
 
-        // Target must be a basic user (not manager/admin)
-        if (!target.isBasicUser()) {
-            return false;
+        return includeCurrentRoleIfMissing(
+                getAssignableRolesForUpdate(actor, target),
+                target.getRole()
+        );
+    }
+
+    private Set<Role> getCurrentRoleOption(Role role) {
+        if (role == null) {
+            return EnumSet.noneOf(Role.class);
+        }
+        return EnumSet.of(role);
+    }
+
+    private Set<Role> getAssignableRolesForUpdate(User actor, User target) {
+        if (actor.isAdmin()) {
+            return getAssignableRolesForAdmin(actor, target);
         }
 
-        Department actorDepartment = actor.getDepartment();
-        Department targetDepartment = target.getDepartment();
+        return EnumSet.noneOf(Role.class);
+    }
 
-        // Both must have departments
-        if (actorDepartment == null || targetDepartment == null) {
-            return false;
+    private Set<Role> getAssignableRolesForAdmin(User actor, User target) {
+        if (sameUser(actor, target)) {
+            return EnumSet.of(Role.ADMIN);
         }
 
-        // Actor’s department must be active
-        if (!actorDepartment.isActive()) {
-            return false;
+        if (target.isAdmin() && wouldLeaveSystemWithoutActiveAdmin(target)) {
+            return EnumSet.of(Role.ADMIN);
         }
 
-        // Must be same department
-        return actorDepartment.getId().equals(targetDepartment.getId());
+        return EnumSet.allOf(Role.class);
+    }
+
+    private Set<Role> includeCurrentRoleIfMissing(Set<Role> options, Role currentRole) {
+        if (currentRole == null || options.contains(currentRole)) {
+            return options;
+        }
+
+        Set<Role> result = EnumSet.copyOf(options);
+        result.add(currentRole);
+        return result;
     }
 
     public static boolean sameUser(User a, User b) {

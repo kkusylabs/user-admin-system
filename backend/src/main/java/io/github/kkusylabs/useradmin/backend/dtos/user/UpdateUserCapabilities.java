@@ -50,7 +50,7 @@ public record UpdateUserCapabilities(
         /**
          * The set of roles the actor is allowed to assign (if role editing is allowed).
          */
-        Set<Role> assignableRoles,
+        Set<Role> roleOptions,
 
         /**
          * The list of department options to display in the UI.
@@ -69,8 +69,6 @@ public record UpdateUserCapabilities(
 ) {
 
     public UpdateUserCapabilities {
-        Objects.requireNonNull(assignableRoles, "assignableRoles must not be null");
-        Objects.requireNonNull(departmentOptions, "departmentOptions must not be null");
     }
 
     /**

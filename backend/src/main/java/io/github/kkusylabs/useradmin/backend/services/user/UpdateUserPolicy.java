@@ -26,11 +26,9 @@ public record UpdateUserPolicy(
         boolean canEditRole,
         boolean canEditDepartment,
         boolean canEditActive,
-        Set<Role> assignableRoles,
         String reason
 ) {
     public UpdateUserPolicy {
-        Objects.requireNonNull(assignableRoles, "assignableRoles must not be null");
     }
 
     /**
@@ -47,7 +45,6 @@ public record UpdateUserPolicy(
                 false,
                 false,
                 false,
-                Set.of(),
                 reason
         );
     }
@@ -58,7 +55,7 @@ public record UpdateUserPolicy(
      * @param assignableRoles the roles the admin may assign
      * @return an admin update policy
      */
-    public static UpdateUserPolicy admin(Set<Role> assignableRoles) {
+    public static UpdateUserPolicy admin() {
         return new UpdateUserPolicy(
                 true,
                 true,
@@ -66,7 +63,18 @@ public record UpdateUserPolicy(
                 true,
                 true,
                 true,
-                assignableRoles,
+                null
+        );
+    }
+
+    public static UpdateUserPolicy adminSelf() {
+        return new UpdateUserPolicy(
+                true,
+                true,
+                true,
+                false,
+                true,
+                false,
                 null
         );
     }
@@ -84,7 +92,6 @@ public record UpdateUserPolicy(
                 false,
                 false,
                 false,
-                Set.of(),
                 null
         );
     }
@@ -102,7 +109,6 @@ public record UpdateUserPolicy(
                 false,
                 false,
                 true,
-                Set.of(),
                 null
         );
     }
