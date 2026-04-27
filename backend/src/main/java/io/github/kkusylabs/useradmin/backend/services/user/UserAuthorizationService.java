@@ -5,7 +5,6 @@ import io.github.kkusylabs.useradmin.backend.dtos.user.CreateUserCapabilities;
 import io.github.kkusylabs.useradmin.backend.dtos.user.DeleteUserCapabilities;
 import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserCapabilities;
 import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserRequest;
-import io.github.kkusylabs.useradmin.backend.exceptions.ValidationException;
 import io.github.kkusylabs.useradmin.backend.exceptions.department.InactiveDepartmentException;
 import io.github.kkusylabs.useradmin.backend.exceptions.security.InsufficientPermissionsException;
 import io.github.kkusylabs.useradmin.backend.exceptions.user.LastActiveAdminDeletionException;
@@ -14,11 +13,9 @@ import io.github.kkusylabs.useradmin.backend.models.Role;
 import io.github.kkusylabs.useradmin.backend.models.User;
 import io.github.kkusylabs.useradmin.backend.repositories.DepartmentRepository;
 import io.github.kkusylabs.useradmin.backend.repositories.UserRepository;
-import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * Service responsible for enforcing authorization rules for {@link User} operations.
@@ -53,13 +50,10 @@ public class UserAuthorizationService {
     }
 
     public boolean canCreate(User actor) {
-        requirePresent(actor, "actor", "Actor is required.");
         return getCreatePolicy(actor).canCreate();
     }
 
     private CreateUserPolicy getCreatePolicy(User actor) {
-        requirePresent(actor, "actor", "actor is required.");
-
         if (actor.isAdmin()) {
             return CreateUserPolicy.allowed();
         }
@@ -85,25 +79,10 @@ public class UserAuthorizationService {
         CreateUserPolicy policy = getCreatePolicy(actor);
         requirePermission(policy.canCreate(), policy.reason());
 
-        validateCreateRole(actor, role);
-        validateCreateDepartment(actor, department);
-    }
-
-    private void validateCreateRole(User actor, Role role) {
-        requirePresent(role, "role", "role is required.");
         requirePermission(
                 canAssignRoleForCreate(actor, role),
                 "You do not have permission to assign this role."
         );
-    }
-
-    private boolean canAssignRoleForCreate(User actor, Role role) {
-        Set<Role> assignableRoles = getAssignableRolesForCreate(actor);
-        return assignableRoles.contains(role);
-    }
-
-    private void validateCreateDepartment(User actor, Department department) {
-        requirePresent(department, "department", "department is required.");
 
         if (!department.isActive()) {
             throw new InactiveDepartmentException(department.getId());
@@ -111,6 +90,11 @@ public class UserAuthorizationService {
 
         requirePermission(canAssignDepartmentForCreate(actor, department),
                 "You do not have permission to assign this department.");
+    }
+
+    private boolean canAssignRoleForCreate(User actor, Role role) {
+        Set<Role> assignableRoles = getAssignableRolesForCreate(actor);
+        return assignableRoles.contains(role);
     }
 
     private boolean canAssignDepartmentForCreate(User actor, Department department) {
@@ -191,9 +175,6 @@ public class UserAuthorizationService {
     }
 
     private DeleteUserPolicy getDeletePolicy(User actor, User target) {
-        requirePresent(actor, "actor", "Actor is required.");
-        requirePresent(actor, "target", "Target is required.");
-
         if (sameUser(actor, target)) {
             return DeleteUserPolicy.denied("You may not delete your own account.");
         }
@@ -261,8 +242,6 @@ public class UserAuthorizationService {
     }
 
     public UpdateUserPolicy getUpdatePolicy(User actor, User target) {
-        requirePresent(actor, "actor", "Actor is required.");
-        requirePresent(target, "target", "Target user is required.");
 
         // Cannot update yourself beyond allowed scope (handled below, but keep this first for clarity if needed)
         if (sameUser(actor, target)) {
@@ -355,11 +334,8 @@ public class UserAuthorizationService {
                 "You do not have permission to change this user's role."
         );
 
-        Role role = request.role().orElse(null);
-        requirePresent(role, "role", "role is required.");
-
         requirePermission(
-                canAssignRoleForUpdate(actor, target, role),
+                canAssignRoleForUpdate(actor, target, request.role().get()),
                 "You do not have permission to assign this role."
         );
     }
@@ -376,17 +352,6 @@ public class UserAuthorizationService {
     ) {
         if (!request.departmentId().isPresent()) {
             return;
-        }
-
-        Long requestedId = request.departmentId().orElse(null);
-        requirePresent(requestedId, "departmentId", "departmentId cannot be null.");
-        requirePresent(department, "departmentId", "departmentId is invalid.");
-
-        if (!Objects.equals(department.getId(), requestedId)) {
-            throw ValidationException.field(
-                    "departmentId",
-                    "departmentId does not match resolved department."
-            );
         }
 
         requirePermission(
@@ -411,9 +376,6 @@ public class UserAuthorizationService {
                 policy.canEditActive(),
                 "You do not have permission to change this user's active status."
         );
-
-        Boolean active = request.active().orElse(null);
-        requirePresent(active, "active", "active is required");
     }
 
     public UpdateUserCapabilities getUpdateCapabilities(User actor, User target) {
@@ -595,12 +557,6 @@ public class UserAuthorizationService {
         return user.isAdmin()
                 && user.isActive()
                 && userRepository.countByRoleAndActiveTrue(Role.ADMIN) <= 1;
-    }
-
-    private static void requirePresent(Object value, String field, String message) {
-        if (value == null) {
-            throw ValidationException.field(field, message);
-        }
     }
 
     private void requirePermission(boolean condition, String message) {
