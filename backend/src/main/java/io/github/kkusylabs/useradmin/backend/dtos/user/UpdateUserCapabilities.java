@@ -1,7 +1,6 @@
 package io.github.kkusylabs.useradmin.backend.dtos.user;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentOption;
@@ -67,9 +66,6 @@ public record UpdateUserCapabilities(
         String reason
 
 ) {
-
-    public UpdateUserCapabilities {
-    }
 
     /**
      * Returns a capabilities object indicating no update is allowed.

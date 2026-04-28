@@ -1,11 +1,6 @@
 package io.github.kkusylabs.useradmin.backend.services.user;
 
 
-import io.github.kkusylabs.useradmin.backend.models.Role;
-
-import java.util.Objects;
-import java.util.Set;
-
 /**
  * Represents the authorization policy for updating a user.
  *
@@ -28,8 +23,6 @@ public record UpdateUserPolicy(
         boolean canEditActive,
         String reason
 ) {
-    public UpdateUserPolicy {
-    }
 
     /**
      * Creates a denial policy with no editable fields.
