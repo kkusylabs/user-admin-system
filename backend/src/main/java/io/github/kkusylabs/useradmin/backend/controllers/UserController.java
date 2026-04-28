@@ -76,6 +76,15 @@ public class UserController {
         return ResponseEntity.ok(userService.getUser(id, actorId));
     }
 
+    @PatchMapping("/{id}")
+    public ResponseEntity<UserListItemResponse> updateUser(
+            @PathVariable Long id,
+            @RequestBody UpdateUserRequest request,
+            @CurrentActorId Long actorId) {
+        UserListItemResponse updatedUser = userService.updateUser(id, request, actorId);
+        return ResponseEntity.ok(updatedUser);
+    }
+
     /**
      * Deletes a user by its identifier.
      *
