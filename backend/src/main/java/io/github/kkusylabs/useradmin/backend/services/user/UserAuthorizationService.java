@@ -8,6 +8,7 @@ import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserRequest;
 import io.github.kkusylabs.useradmin.backend.exceptions.department.InactiveDepartmentException;
 import io.github.kkusylabs.useradmin.backend.exceptions.security.InsufficientPermissionsException;
 import io.github.kkusylabs.useradmin.backend.exceptions.user.LastActiveAdminDeletionException;
+import io.github.kkusylabs.useradmin.backend.exceptions.user.LastActiveAdminUpdateException;
 import io.github.kkusylabs.useradmin.backend.models.Department;
 import io.github.kkusylabs.useradmin.backend.models.Role;
 import io.github.kkusylabs.useradmin.backend.models.User;
@@ -284,6 +285,7 @@ public class UserAuthorizationService {
         validateRoleChange(policy, request, actor, target);
         validateDepartmentChange(policy, request, department);
         validateActiveChange(policy, request);
+        validateLastActiveAdminInvariant(request, target);
     }
 
     private void validateProfileChanges(
@@ -378,6 +380,30 @@ public class UserAuthorizationService {
         );
     }
 
+    private void validateLastActiveAdminInvariant(
+            UpdateUserRequest request,
+            User target
+    ) {
+        if (!wouldLeaveSystemWithoutActiveAdmin(target)) {
+            return;
+        }
+
+        Role resultingRole = request.role().isPresent()
+                ? request.role().get()
+                : target.getRole();
+
+        boolean resultingActive = request.active().isPresent()
+                ? request.active().get()
+                : target.isActive();
+
+        boolean remainsActiveAdmin =
+                resultingRole == Role.ADMIN && resultingActive;
+
+        if (!remainsActiveAdmin) {
+            throw new LastActiveAdminUpdateException();
+        }
+    }
+
     public UpdateUserCapabilities getUpdateCapabilities(User actor, User target) {
         UpdateUserPolicy policy = getUpdatePolicy(actor, target);
 
@@ -385,13 +411,16 @@ public class UserAuthorizationService {
             return UpdateUserCapabilities.none(policy.reason());
         }
 
-        List<DepartmentOption> departmentOptions = getDepartmentOptionsForUpdate(
-                actor,
-                target,
-                policy
-        );
+        boolean isLastActiveAdmin = wouldLeaveSystemWithoutActiveAdmin(target);
 
-        Set<Role> roleOptions = getRoleOptionsForUpdate(
+        boolean canEditRole = policy.canEditRole() && !isLastActiveAdmin;
+        boolean canEditActive = policy.canEditActive() && !isLastActiveAdmin;
+
+        Set<Role> roleOptions = canEditRole
+                ? getRoleOptionsForUpdate(actor, target)
+                : getCurrentRoleOption(target.getRole());
+
+        List<DepartmentOption> departmentOptions = getDepartmentOptionsForUpdate(
                 actor,
                 target,
                 policy
@@ -401,9 +430,9 @@ public class UserAuthorizationService {
                 true,
                 policy.canEditProfile(),
                 policy.canEditJobTitle(),
-                policy.canEditRole(),
+                canEditRole,
                 policy.canEditDepartment(),
-                policy.canEditActive(),
+                canEditActive,
                 roleOptions,
                 departmentOptions,
                 null
@@ -474,15 +503,7 @@ public class UserAuthorizationService {
         return List.of(new DepartmentOption(department.getId(), department.getName()));
     }
 
-    private Set<Role> getRoleOptionsForUpdate(
-            User actor,
-            User target,
-            UpdateUserPolicy policy
-    ) {
-        if (!policy.canEditRole()) {
-            return getCurrentRoleOption(target.getRole());
-        }
-
+    private Set<Role> getRoleOptionsForUpdate(User actor, User target) {
         return includeCurrentRoleIfMissing(
                 getAssignableRolesForUpdate(actor, target),
                 target.getRole()
@@ -497,20 +518,12 @@ public class UserAuthorizationService {
     }
 
     private Set<Role> getAssignableRolesForUpdate(User actor, User target) {
-        if (actor.isAdmin()) {
-            return getAssignableRolesForAdmin(actor, target);
+        if (!actor.isAdmin()) {
+            return EnumSet.noneOf(Role.class);
         }
 
-        return EnumSet.noneOf(Role.class);
-    }
-
-    private Set<Role> getAssignableRolesForAdmin(User actor, User target) {
         if (sameUser(actor, target)) {
-            return EnumSet.of(Role.ADMIN);
-        }
-
-        if (target.isAdmin() && wouldLeaveSystemWithoutActiveAdmin(target)) {
-            return EnumSet.of(Role.ADMIN);
+            return EnumSet.noneOf(Role.class);
         }
 
         return EnumSet.allOf(Role.class);
@@ -521,7 +534,8 @@ public class UserAuthorizationService {
             return options;
         }
 
-        Set<Role> result = EnumSet.copyOf(options);
+        Set<Role> result = EnumSet.noneOf(Role.class);
+        result.addAll(options);
         result.add(currentRole);
         return result;
     }
