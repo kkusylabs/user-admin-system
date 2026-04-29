@@ -78,10 +78,10 @@ public final class UpdateUserValidator {
 
         String value = field.orElse(null);
         if (value == null) {
-            throw new ValidationException(name, "cannot be null or blank");
+            throw new ValidationException(name + " cannot be null or blank");
         }
         if (value.length() > maxLength) {
-            throw new ValidationException(name, "must be at most " + maxLength + " characters");
+            throw new ValidationException(name + " must be at most " + maxLength + " characters");
         }
     }
 
@@ -100,13 +100,13 @@ public final class UpdateUserValidator {
 
         String value = field.orElse(null);
         if (value == null) {
-            throw new ValidationException(name, "cannot be null or blank");
+            throw new ValidationException(name + " cannot be null or blank");
         }
         if (value.length() > maxLength) {
-            throw new ValidationException(name, "must be at most " + maxLength + " characters");
+            throw new ValidationException(name + " must be at most " + maxLength + " characters");
         }
         if (!EMAIL_PATTERN.matcher(value).matches()) {
-            throw new ValidationException(name, "is invalid");
+            throw new ValidationException(name +  " is invalid");
         }
     }
 
@@ -123,7 +123,7 @@ public final class UpdateUserValidator {
 
         String value = field.orElse(null);
         if (value != null && !PHONE_PATTERN.matcher(value).matches()) {
-            throw new ValidationException(name, "is invalid");
+            throw new ValidationException(name + " is invalid");
         }
     }
 
@@ -141,7 +141,7 @@ public final class UpdateUserValidator {
 
         String value = field.orElse(null);
         if (value != null && value.length() > maxLength) {
-            throw new ValidationException(name, "must be at most " + maxLength + " characters");
+            throw new ValidationException(name + " must be at most " + maxLength + " characters");
         }
     }
 
@@ -158,7 +158,7 @@ public final class UpdateUserValidator {
 
         Long value = field.orElse(null);
         if (value == null || value <= 0) {
-            throw new ValidationException(name, "must be a positive number");
+            throw new ValidationException(name + " must be a positive number");
         }
     }
 
@@ -175,7 +175,7 @@ public final class UpdateUserValidator {
         if (!field.isPresent()) return;
 
         if (field.orElse(null) == null) {
-            throw new ValidationException(name, "cannot be null");
+            throw new ValidationException(name + " cannot be null");
         }
     }
 }
