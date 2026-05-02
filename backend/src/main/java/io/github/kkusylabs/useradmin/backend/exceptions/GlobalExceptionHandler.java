@@ -7,7 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -142,21 +145,48 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(AuthenticationException.class)
+    public ProblemDetail handleAuthentication(AuthenticationException ex, HttpServletRequest request) {
+        ProblemDetail problem = createProblem(
+                HttpStatus.UNAUTHORIZED,
+                "Unauthorized",
+                "Invalid username or password.",
+                request.getRequestURI()
+        );
+        problem.setProperty("code", "INVALID_CREDENTIALS");
+        return problem;
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ProblemDetail handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+        ProblemDetail problem = createProblem(
+                HttpStatus.FORBIDDEN,
+                "Forbidden",
+                "Access denied.",
+                request.getRequestURI()
+        );
+        problem.setProperty("code", "INSUFFICIENT_PERMISSIONS");
+        return problem;
+    }
+
     /**
      * Handles unexpected exceptions.
      */
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGeneric(Exception ex, HttpServletRequest request) {
-        log.error("Unhandled exception", ex);
+        if (ex instanceof ErrorResponse errorResponse) {
+            ProblemDetail problem = errorResponse.getBody();
+            problem.setInstance(URI.create(request.getRequestURI()));
+            problem.setProperty("timestamp", Instant.now());
+            return problem;
+        }
 
-        ProblemDetail problem = createProblem(
+        return createProblem(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Internal Server Error",
                 "An unexpected error occurred.",
                 request.getRequestURI()
         );
-        problem.setProperty("code", "INTERNAL_ERROR");
-        return problem;
     }
 
     /**
