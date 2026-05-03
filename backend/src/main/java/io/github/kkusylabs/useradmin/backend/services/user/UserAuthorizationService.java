@@ -2,7 +2,6 @@ package io.github.kkusylabs.useradmin.backend.services.user;
 
 import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentOption;
 import io.github.kkusylabs.useradmin.backend.dtos.user.CreateUserCapabilities;
-import io.github.kkusylabs.useradmin.backend.dtos.user.DeleteUserCapabilities;
 import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserCapabilities;
 import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserRequest;
 import io.github.kkusylabs.useradmin.backend.exceptions.department.InactiveDepartmentException;
@@ -210,33 +209,6 @@ public class UserAuthorizationService {
             throw new LastActiveAdminDeletionException();
         }
     }
-
-    /**
-     * Computes deletion capabilities for the actor relative to the target user.
-     *
-     * @param actor  the acting user
-     * @param target the user being evaluated
-     * @return the deletion capabilities, including denial reason if applicable
-     */
-    public DeleteUserCapabilities getDeleteCapabilities(User actor, User target) {
-        DeleteUserPolicy policy = getDeletePolicy(actor, target);
-
-        if (!policy.canDelete()) {
-            return DeleteUserCapabilities.none(policy.reason());
-        }
-
-        if (wouldLeaveSystemWithoutActiveAdmin(target)) {
-            return DeleteUserCapabilities.none(
-                    "You may not delete the last active administrator."
-            );
-        }
-
-        return new DeleteUserCapabilities(
-                true,
-                null // reason
-        );
-    }
-
 
     public boolean canUpdate(User actor, User target) {
         return getUpdatePolicy(actor, target).canUpdate();

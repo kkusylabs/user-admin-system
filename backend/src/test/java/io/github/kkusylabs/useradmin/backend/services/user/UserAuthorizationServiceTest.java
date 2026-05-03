@@ -1,7 +1,6 @@
 package io.github.kkusylabs.useradmin.backend.services.user;
 
 import io.github.kkusylabs.useradmin.backend.dtos.user.CreateUserCapabilities;
-import io.github.kkusylabs.useradmin.backend.dtos.user.DeleteUserCapabilities;
 import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserCapabilities;
 import io.github.kkusylabs.useradmin.backend.dtos.user.UpdateUserRequest;
 import io.github.kkusylabs.useradmin.backend.exceptions.department.InactiveDepartmentException;
@@ -19,7 +18,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.openapitools.jackson.nullable.JsonNullable;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -204,17 +202,6 @@ class UserAuthorizationServiceTest {
                     () -> service.validateDeletionRequest(admin, target));
         }
 
-        @Test
-        void deleteCapabilitiesDenyLastActiveAdminDeletion() {
-            User admin = user(10L, Role.ADMIN, sales, true);
-            User target = user(11L, Role.ADMIN, engineering, true);
-            when(userRepository.countByRoleAndActiveTrue(Role.ADMIN)).thenReturn(1L);
-
-            DeleteUserCapabilities capabilities = service.getDeleteCapabilities(admin, target);
-
-            assertFalse(capabilities.canDelete());
-            assertNotNull(capabilities.reason());
-        }
     }
 
     @Nested

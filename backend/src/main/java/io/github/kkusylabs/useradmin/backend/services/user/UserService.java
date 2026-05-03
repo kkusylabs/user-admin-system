@@ -185,13 +185,6 @@ public class UserService {
         return userAuthorizationService.getCreateCapabilities(actor);
     }
 
-    @Transactional(readOnly = true)
-    public DeleteUserCapabilities getDeleteUserCapabilities(Long targetUserId, Long actorId) {
-        User actor = getRequiredActor(actorId);
-        User targetUser = getRequiredTargetUser(targetUserId);
-        return userAuthorizationService.getDeleteCapabilities(actor, targetUser);
-    }
-
     private User getRequiredActor(Long actorId) {
         return userRepository.findById(actorId)
                 .orElseThrow(() -> new UserNotFoundException(actorId));

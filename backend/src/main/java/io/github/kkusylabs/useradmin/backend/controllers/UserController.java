@@ -116,13 +116,4 @@ public class UserController {
     ) {
         return ResponseEntity.ok(userService.getCreateUserCapabilities(actorId));
     }
-
-    @GetMapping("/delete-capabilities/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<DeleteUserCapabilities> getDeleteUserCapabilities(
-            @PathVariable Long id,
-            @CurrentActorId Long actorId
-    ) {
-        return ResponseEntity.ok(userService.getDeleteUserCapabilities(id, actorId));
-    }
 }

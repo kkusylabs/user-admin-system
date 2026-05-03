@@ -138,15 +138,6 @@ class UserControllerIntegrationTest {
     }
 
     @Test
-    void getDeleteUserCapabilitiesReturnsCapabilitiesForAdminDeletingAnotherUser() throws Exception {
-        mockMvc.perform(get("/api/users/delete-capabilities/{id}", basicUser.getId())
-                        .header("Authorization", bearerToken(admin)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.canDelete").value(true))
-                .andExpect(jsonPath("$.reason").doesNotExist());
-    }
-
-    @Test
     void createUserPersistsUserWhenAdminIsAuthenticated() throws Exception {
         String requestJson = """
                 {
