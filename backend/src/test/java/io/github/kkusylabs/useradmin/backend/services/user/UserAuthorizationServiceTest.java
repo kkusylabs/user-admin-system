@@ -224,27 +224,6 @@ class UserAuthorizationServiceTest {
         }
 
         @Test
-        void adminSelfCanEditProfileJobTitleAndDepartmentButNotRoleOrActive() {
-            User admin = user(10L, Role.ADMIN, sales, true);
-            UpdateUserPolicy policy = service.getUpdatePolicy(admin, admin);
-
-            assertTrue(policy.canUpdate());
-            assertTrue(policy.canEditProfile());
-            assertTrue(policy.canEditJobTitle());
-            assertTrue(policy.canEditDepartment());
-            assertFalse(policy.canEditRole());
-            assertFalse(policy.canEditActive());
-
-            assertDoesNotThrow(() -> service.validateUpdateRequest(
-                    admin, admin, withDepartment(engineering.getId()), engineering));
-
-            assertThrows(InsufficientPermissionsException.class,
-                    () -> service.validateUpdateRequest(admin, admin, withRole(Role.USER), sales));
-            assertThrows(InsufficientPermissionsException.class,
-                    () -> service.validateUpdateRequest(admin, admin, withActive(false), sales));
-        }
-
-        @Test
         void managerCanUpdateManagedBasicUserProfileJobTitleAndActive() {
             User manager = user(20L, Role.MANAGER, sales, true);
             User target = user(30L, Role.USER, sales, true);

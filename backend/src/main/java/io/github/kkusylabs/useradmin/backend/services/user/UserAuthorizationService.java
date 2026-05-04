@@ -301,7 +301,7 @@ public class UserAuthorizationService {
      * @param target user being updated
      * @return the resolved update policy
      */
-    public UpdateUserPolicy getUpdatePolicy(User actor, User target) {
+    private UpdateUserPolicy getUpdatePolicy(User actor, User target) {
 
         // Cannot update yourself beyond allowed scope (handled below, but keep this first for clarity if needed)
         if (sameUser(actor, target)) {
@@ -660,7 +660,7 @@ public class UserAuthorizationService {
     /**
      * Checks whether two users represent the same persisted user.
      */
-    public static boolean sameUser(User a, User b) {
+    private static boolean sameUser(User a, User b) {
         return a != null
                 && b != null
                 && Objects.equals(a.getId(), b.getId());
@@ -669,7 +669,7 @@ public class UserAuthorizationService {
     /**
      * Checks whether two departments represent the same persisted department.
      */
-    public static boolean sameDepartment(Department a, Department b) {
+    private static boolean sameDepartment(Department a, Department b) {
         return a != null
                 && b != null
                 && Objects.equals(a.getId(), b.getId());
@@ -680,7 +680,7 @@ public class UserAuthorizationService {
      *
      * <p>Managers may manage only basic users in their own department.</p>
      */
-    public static boolean canManageUser(User actor, User target) {
+    private static boolean canManageUser(User actor, User target) {
         return actor != null
                 && target != null
                 && actor.isManager()
@@ -695,7 +695,7 @@ public class UserAuthorizationService {
      * @param user user being evaluated
      * @return {@code true} if the user is the last active admin
      */
-    public boolean wouldLeaveSystemWithoutActiveAdmin(User user) {
+    private boolean wouldLeaveSystemWithoutActiveAdmin(User user) {
         return user.isAdmin()
                 && user.isActive()
                 && userRepository.countByRoleAndActiveTrue(Role.ADMIN) <= 1;
