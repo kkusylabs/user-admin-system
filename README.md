@@ -4,7 +4,7 @@ A Spring Boot backend for managing users, roles, and departments with a focus on
 
 ---
 
-## 🚀 Overview
+## Overview
 
 This project models a typical internal admin system where user management is constrained by role- and department-based permissi.
 
@@ -17,7 +17,7 @@ It emphasizes:
 
 ---
 
-## 🏗 Architecture
+## Architecture
 
 The application follows a layered structure:
 
@@ -43,7 +43,7 @@ This keeps business workflows clean and avoids scattering permission logic.
 
 ---
 
-## 🔐 Authorization Model
+## Authorization Model
 
 The system defines three roles:
 
@@ -65,7 +65,7 @@ The system defines three roles:
 
 ---
 
-## ⚠️ Business Rules
+## Business Rules
 
 The system enforces several invariants:
 
@@ -79,7 +79,7 @@ These rules are enforced in the service layer—not just at the API boundary.
 
 ---
 
-## 🧠 Capabilities-Based API
+## Capabilities-Based API
 
 Responses include **capabilities** describing what the current user can do.
 
@@ -101,7 +101,7 @@ This allows the frontend to:
 
 ---
 
-## ✏️ Update Semantics
+## Update Semantics
 
 User updates follow **PATCH-style behavior**:
 
@@ -116,7 +116,7 @@ This is implemented using `JsonNullable` to distinguish:
 
 ---
 
-## 📦 API Overview
+## API Overview
 
 ### Users
 
@@ -150,7 +150,7 @@ This is implemented using `JsonNullable` to distinguish:
 
 ---
 
-## 🧪 Testing
+## Testing
 
 The project includes:
 
@@ -166,7 +166,7 @@ Run tests:
 
 ---
 
-## ⚙️ Running the Project
+## Running the Project
 
 ### Requirements
 
@@ -181,14 +181,13 @@ Run tests:
 
 ---
 
-## 🗄 Database
+## Database
 
-* Default: H2 (in-memory)
 * Easily configurable for PostgreSQL
 
 ---
 
-## 🧩 Notable Implementation Details
+## Notable Implementation Details
 
 * **Authorization is centralized**
 
@@ -208,7 +207,7 @@ Run tests:
 
 ---
 
-## 👤 Author
+## Author
 
 Kevin Kusy
 GitHub: https://github.com/kkusylabs
