@@ -3,6 +3,10 @@ package io.github.kkusylabs.useradmin.backend.controllers;
 import io.github.kkusylabs.useradmin.backend.models.User;
 import io.github.kkusylabs.useradmin.backend.repositories.UserRepository;
 import io.github.kkusylabs.useradmin.backend.security.JwtService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
@@ -54,6 +58,15 @@ public class AuthController {
      * @return JWT token for the authenticated user
      */
     @PostMapping("/login")
+    @Operation(
+            summary = "Log in",
+            description = "Authenticates a user and returns a JWT access token."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Login successful"),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Invalid username or password", content = @Content)
+    })
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
 
         authenticationManager.authenticate(
@@ -82,10 +95,18 @@ public class AuthController {
      * @return a map containing the user's ID and username
      */
     @GetMapping("/me")
-    public Map<String, Object> me(@AuthenticationPrincipal Jwt jwt) {
-        return Map.of(
-                "userId", jwt.getSubject(),
-                "username", jwt.getClaim("username")
+    @Operation(
+            summary = "Get current user",
+            description = "Returns basic identity information for the currently authenticated user."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Current user retrieved"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content)
+    })
+    public MeResponse me(@AuthenticationPrincipal Jwt jwt) {
+        return new MeResponse(
+                ((Number) jwt.getClaim("userId")).longValue(),
+                jwt.getSubject()
         );
     }
 
@@ -124,6 +145,12 @@ public class AuthController {
     public record AuthResponse(
             String accessToken,
             String tokenType
+    ) {
+    }
+
+    public record MeResponse(
+            Long userId,
+            String username
     ) {
     }
 }

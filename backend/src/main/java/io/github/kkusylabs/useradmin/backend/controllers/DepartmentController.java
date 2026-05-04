@@ -6,6 +6,12 @@ import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentListRespo
 import io.github.kkusylabs.useradmin.backend.dtos.department.UpdateDepartmentRequest;
 import io.github.kkusylabs.useradmin.backend.security.CurrentActorId;
 import io.github.kkusylabs.useradmin.backend.services.department.DepartmentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,9 +54,19 @@ public class DepartmentController {
      */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN')")
+    @Operation(
+            summary = "Create department",
+            description = "Creates a new department. Requires ADMIN role."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Department created"),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content)
+    })
     public ResponseEntity<DepartmentListItemResponse> createDepartment(
             @Valid @RequestBody CreateDepartmentRequest request,
-            @CurrentActorId Long actorId
+            @Parameter(hidden = true) @CurrentActorId Long actorId
     ) {
         DepartmentListItemResponse createdDepartment = departmentService.createDepartment(request, actorId);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdDepartment);
@@ -63,8 +79,16 @@ public class DepartmentController {
      * @return list of departments with permissions and create capability flag
      */
     @GetMapping
+    @Operation(
+            summary = "Get departments",
+            description = "Retrieves all departments, including permissions and create capability for the current user."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Departments retrieved"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content)
+    })
     public ResponseEntity<DepartmentListResponse> getDepartments(
-            @CurrentActorId Long actorId
+            @Parameter(hidden = true) @CurrentActorId Long actorId
     ) {
         return ResponseEntity.ok(departmentService.getDepartments(actorId));
     }
@@ -77,9 +101,19 @@ public class DepartmentController {
      * @return department details with permissions
      */
     @GetMapping("/{departmentId}")
+    @Operation(
+            summary = "Get department",
+            description = "Retrieves a department by ID, including permissions for the current user."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Department retrieved"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Department not found", content = @Content)
+    })
     public ResponseEntity<DepartmentListItemResponse> getDepartment(
+            @Parameter(description = "Department ID", required = true)
             @PathVariable Long departmentId,
-            @CurrentActorId Long actorId
+            @Parameter(hidden = true) @CurrentActorId Long actorId
     ) {
         return ResponseEntity.ok(departmentService.getDepartment(departmentId, actorId));
     }
@@ -94,10 +128,22 @@ public class DepartmentController {
      */
     @PutMapping("/{departmentId}")
     @PreAuthorize("hasAnyRole('ADMIN')")
+    @Operation(
+            summary = "Update department",
+            description = "Updates an existing department. Requires ADMIN role."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Department updated"),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Department not found", content = @Content)
+    })
     public ResponseEntity<DepartmentListItemResponse> updateDepartment(
             @Valid @RequestBody UpdateDepartmentRequest request,
+            @Parameter(description = "Department ID", required = true)
             @PathVariable Long departmentId,
-            @CurrentActorId Long actorId) {
+            @Parameter(hidden = true) @CurrentActorId Long actorId) {
 
         DepartmentListItemResponse updatedDepartment =
                 departmentService.updateDepartment(departmentId, request, actorId);
@@ -114,9 +160,19 @@ public class DepartmentController {
      */
     @DeleteMapping("/{departmentId}")
     @PreAuthorize("hasAnyRole('ADMIN')")
+    @Operation(
+            summary = "Delete department",
+            description = "Deletes a department by ID. Requires ADMIN role."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Department deleted", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Department not found", content = @Content)
+    })
     public ResponseEntity<Void> deleteDepartment(
             @PathVariable Long departmentId,
-            @CurrentActorId Long actorId
+            @Parameter(hidden = true) @CurrentActorId Long actorId
     ) {
         departmentService.deleteDepartment(departmentId, actorId);
         return ResponseEntity.noContent().build();
