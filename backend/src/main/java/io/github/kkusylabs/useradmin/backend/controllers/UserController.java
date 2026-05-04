@@ -63,63 +63,63 @@ public class UserController {
     /**
      * Returns a user by its identifier.
      *
-     * @param id the user identifier
+     * @param userId the user identifier
      * @return the user
      */
-    @GetMapping("/{id}")
+    @GetMapping("/{userId}")
     public ResponseEntity<UserListItemResponse> getUser(
-            @PathVariable Long id,
+            @PathVariable Long userId,
             @CurrentActorId Long actorId
     ) {
-        return ResponseEntity.ok(userService.getUser(id, actorId));
+        return ResponseEntity.ok(userService.getUser(userId, actorId));
     }
 
     /**
      * Applies a partial update to a user.
      *
-     * @param id user identifier
+     * @param userId user identifier
      * @param request fields to update
      * @param actorId identifier of the authenticated actor
      * @return the updated user with actor-relative action flags
      */
-    @PatchMapping("/{id}")
+    @PatchMapping("/{userId}")
     public ResponseEntity<UserListItemResponse> updateUser(
-            @PathVariable Long id,
+            @PathVariable Long userId,
             @RequestBody UpdateUserRequest request,
             @CurrentActorId Long actorId) {
-        UserListItemResponse updatedUser = userService.updateUser(id, request, actorId);
+        UserListItemResponse updatedUser = userService.updateUser(userId, request, actorId);
         return ResponseEntity.ok(updatedUser);
     }
 
     /**
      * Deletes a user by its identifier.
      *
-     * @param id the user identifier
+     * @param userId the user identifier
      * @return an empty response with HTTP 204
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{userId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<Void> deleteUser(
-            @PathVariable Long id,
+            @PathVariable Long userId,
             @CurrentActorId Long actorId
     ) {
-        userService.deleteUser(id, actorId);
+        userService.deleteUser(userId, actorId);
         return ResponseEntity.noContent().build();
     }
 
     /**
      * Returns the data needed to render an edit-user form.
      *
-     * @param id user identifier
+     * @param userId user identifier
      * @param actorId identifier of the authenticated actor
      * @return current user data and update capabilities
      */
-    @GetMapping("/{id}/edit")
+    @GetMapping("/{userId}/edit")
     public ResponseEntity<EditUserResponse> getUserEditData(
-            @PathVariable Long id,
+            @PathVariable Long userId,
             @CurrentActorId Long actorId
     ) {
-        return ResponseEntity.ok(userService.getUserEditData(id, actorId));
+        return ResponseEntity.ok(userService.getUserEditData(userId, actorId));
     }
 
     /**

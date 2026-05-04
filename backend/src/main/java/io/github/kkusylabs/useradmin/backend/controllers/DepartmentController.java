@@ -72,35 +72,35 @@ public class DepartmentController {
     /**
      * Returns a single department by id.
      *
-     * @param id      department id
+     * @param departmentId      department id
      * @param actorId id of the current user
      * @return department details with permissions
      */
-    @GetMapping("/{id}")
+    @GetMapping("/{departmentId}")
     public ResponseEntity<DepartmentListItemResponse> getDepartment(
-            @PathVariable Long id,
+            @PathVariable Long departmentId,
             @CurrentActorId Long actorId
     ) {
-        return ResponseEntity.ok(departmentService.getDepartment(id, actorId));
+        return ResponseEntity.ok(departmentService.getDepartment(departmentId, actorId));
     }
 
     /**
      * Updates an existing department.
      *
      * @param request request payload with updated data
-     * @param id      department id
+     * @param departmentId      department id
      * @param actorId id of the current user
      * @return updated department with permissions
      */
-    @PutMapping("/{id}")
+    @PutMapping("/{departmentId}")
     @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<DepartmentListItemResponse> updateDepartment(
             @Valid @RequestBody UpdateDepartmentRequest request,
-            @PathVariable Long id,
+            @PathVariable Long departmentId,
             @CurrentActorId Long actorId) {
 
         DepartmentListItemResponse updatedDepartment =
-                departmentService.updateDepartment(id, request, actorId);
+                departmentService.updateDepartment(departmentId, request, actorId);
 
         return ResponseEntity.ok(updatedDepartment);
     }
@@ -108,17 +108,17 @@ public class DepartmentController {
     /**
      * Deletes a department.
      *
-     * @param id      department id
+     * @param departmentId      department id
      * @param actorId id of the current user
      * @return empty response on success
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{departmentId}")
     @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<Void> deleteDepartment(
-            @PathVariable Long id,
+            @PathVariable Long departmentId,
             @CurrentActorId Long actorId
     ) {
-        departmentService.deleteDepartment(id, actorId);
+        departmentService.deleteDepartment(departmentId, actorId);
         return ResponseEntity.noContent().build();
     }
 }
