@@ -8,8 +8,6 @@ import io.github.kkusylabs.useradmin.backend.exceptions.ConflictException;
  *
  * <p>Maps to HTTP 409 (Conflict) as the request violates a uniqueness
  * constraint on department names.</p>
- *
- * @author kkusy
  */
 public class DepartmentNameAlreadyExistsException extends ConflictException {
 

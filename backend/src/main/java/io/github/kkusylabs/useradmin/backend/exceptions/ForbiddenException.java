@@ -12,8 +12,6 @@ import org.springframework.http.HttpStatus;
  *
  * <p>Examples include attempting to access another user's data or performing
  * an admin-only action without sufficient privileges.</p>
- *
- * @author kkusy
  */
 public abstract class ForbiddenException extends ApiException {
 

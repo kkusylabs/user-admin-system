@@ -21,7 +21,6 @@ import jakarta.validation.constraints.Size;
  * @param name        department name
  * @param description optional description
  * @param active      active status
- * @author kkusy
  */
 public record UpdateDepartmentRequest(
         @NotBlank

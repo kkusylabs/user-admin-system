@@ -29,8 +29,6 @@ import java.util.List;
  *   <li>loading the current actor and validating permissions</li>
  *   <li>mapping entities to authorization-aware response DTOs</li>
  * </ul>
- *
- * @author kkusy
  */
 
 @Service

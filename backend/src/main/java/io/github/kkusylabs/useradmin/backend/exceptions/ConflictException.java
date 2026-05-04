@@ -10,8 +10,6 @@ import org.springframework.http.HttpStatus;
  * or invalid state transitions.</p>
  *
  * <p>Examples include "username already exists" or "department not empty".</p>
- *
- * @author kkusy
  */
 public abstract class ConflictException extends ApiException {
 

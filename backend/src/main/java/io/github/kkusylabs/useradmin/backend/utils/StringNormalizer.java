@@ -3,14 +3,14 @@ package io.github.kkusylabs.useradmin.backend.utils;
 import java.util.Locale;
 
 /**
- * Utility methods for normalizing and sanitizing string values.
+ * Utility methods for normalizing common user input strings.
  *
- * <p>Provides common operations such as trimming, null handling, and
- * case normalization for user input.</p>
+ * <p>Provides simple normalization routines for names, emails, and phone numbers
+ * to ensure consistent formatting before storage or comparison.
  *
- * @author kkusy
+ * <p>This class is stateless and not intended to be instantiated.
  */
-public class StringNormalizer {
+public final class StringNormalizer {
 
     private StringNormalizer() {}
 
@@ -58,6 +58,15 @@ public class StringNormalizer {
         return username == null ? null : username.toLowerCase(Locale.ROOT);
     }
 
+    /**
+     * Normalizes a phone number string.
+     *
+     * <p>Trims the input, removes all characters except digits and a leading '+',
+     * and returns {@code null} if the result is empty.</p>
+     *
+     * @param value raw phone number input
+     * @return normalized phone number, or {@code null} if the input is blank or results in no digits
+     */
     public static String normalizePhone(String value) {
         String phone = trimToNull(value);
         if (phone == null) return null;

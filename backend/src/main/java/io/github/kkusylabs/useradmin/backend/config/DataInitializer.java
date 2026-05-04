@@ -10,6 +10,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+/**
+ * Initializes default data on application startup.
+ *
+ * <p>Ensures that a default "Administration" department and an initial
+ * administrator user exist. Intended for development or bootstrap scenarios
+ * and not for production-grade data seeding.</p>
+ */
 @Configuration
 public class DataInitializer {
 

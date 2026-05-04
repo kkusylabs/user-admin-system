@@ -7,6 +7,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
 
+/**
+ * Spring MVC configuration for custom argument resolution.
+ *
+ * <p>Registers {@link CurrentActorIdArgumentResolver} so controller methods
+ * can inject the current actor's ID using {@code @CurrentActorId}.</p>
+ */
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
 
@@ -16,6 +22,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
         this.currentActorIdArgumentResolver = currentActorIdArgumentResolver;
     }
 
+    /**
+     * Registers custom {@link HandlerMethodArgumentResolver}s.
+     */
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
         resolvers.add(currentActorIdArgumentResolver);

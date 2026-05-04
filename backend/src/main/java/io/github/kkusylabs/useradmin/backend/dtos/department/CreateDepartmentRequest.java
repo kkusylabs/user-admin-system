@@ -18,7 +18,6 @@ import jakarta.validation.constraints.Size;
  *
  * @param name        department name
  * @param description optional description
- * @author kkusy
  */
 public record CreateDepartmentRequest(
         @NotBlank

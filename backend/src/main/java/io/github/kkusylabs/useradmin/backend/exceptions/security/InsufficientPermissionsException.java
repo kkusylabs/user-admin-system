@@ -7,8 +7,6 @@ import io.github.kkusylabs.useradmin.backend.exceptions.ForbiddenException;
  *
  * <p>Maps to HTTP 403 (Forbidden). Use this when the user is authenticated
  * but does not have sufficient privileges for the operation.</p>
- *
- * @author kkusy
  */
 public class InsufficientPermissionsException extends ForbiddenException {
 

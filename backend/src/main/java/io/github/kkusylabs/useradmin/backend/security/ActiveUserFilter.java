@@ -21,8 +21,6 @@ import java.io.IOException;
  * For requests authenticated with a JWT, this filter retrieves the user
  * from the database and rejects the request if the account is inactive.
  * </p>
- *
- * @author kkusy
  */
 @Component
 public class ActiveUserFilter extends OncePerRequestFilter {

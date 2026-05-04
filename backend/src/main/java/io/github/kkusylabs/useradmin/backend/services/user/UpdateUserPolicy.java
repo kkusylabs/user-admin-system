@@ -43,9 +43,8 @@ public record UpdateUserPolicy(
     }
 
     /**
-     * Creates an admin policy.
+     * Creates a policy for an administrator updating another user.
      *
-     * @param assignableRoles the roles the admin may assign
      * @return an admin update policy
      */
     public static UpdateUserPolicy admin() {

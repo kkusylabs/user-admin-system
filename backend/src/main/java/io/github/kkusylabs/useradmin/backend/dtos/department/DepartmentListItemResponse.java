@@ -10,8 +10,6 @@ package io.github.kkusylabs.useradmin.backend.dtos.department;
  *   <li><b>canUpdate</b> – whether the user can update this department</li>
  *   <li><b>canDelete</b> – whether the user can delete this department</li>
  * </ul>
- *
- * @author kkusy
  */
 public record DepartmentListItemResponse(
         DepartmentDetailsResponse department,

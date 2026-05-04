@@ -15,7 +15,6 @@ import jakarta.validation.constraints.*;
  * @param jobTitle     user's job title
  * @param departmentId identifier of the associated department
  * @param role         role assigned to the user
- * @author kkusy
  */
 public record CreateUserRequest(
         @NotBlank

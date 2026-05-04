@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.*;
  * REST controller for managing users.
  *
  * <p>Provides endpoints for creating, retrieving, and deleting users.</p>
- *
- * @author kkusy
  */
 @RestController
 @RequestMapping("/api/users")
@@ -76,6 +74,14 @@ public class UserController {
         return ResponseEntity.ok(userService.getUser(id, actorId));
     }
 
+    /**
+     * Applies a partial update to a user.
+     *
+     * @param id user identifier
+     * @param request fields to update
+     * @param actorId identifier of the authenticated actor
+     * @return the updated user with actor-relative action flags
+     */
     @PatchMapping("/{id}")
     public ResponseEntity<UserListItemResponse> updateUser(
             @PathVariable Long id,
@@ -101,6 +107,13 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Returns the data needed to render an edit-user form.
+     *
+     * @param id user identifier
+     * @param actorId identifier of the authenticated actor
+     * @return current user data and update capabilities
+     */
     @GetMapping("/{id}/edit")
     public ResponseEntity<EditUserResponse> getUserEditData(
             @PathVariable Long id,
@@ -109,6 +122,12 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserEditData(id, actorId));
     }
 
+    /**
+     * Returns the data needed to render a create-user form.
+     *
+     * @param actorId identifier of the authenticated actor
+     * @return create permission, assignable roles, and assignable departments
+     */
     @GetMapping("/create-capabilities")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<CreateUserCapabilities> getCreateUserCapabilities(

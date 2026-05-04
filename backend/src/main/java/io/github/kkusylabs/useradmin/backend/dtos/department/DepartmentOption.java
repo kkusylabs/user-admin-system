@@ -11,8 +11,6 @@ package io.github.kkusylabs.useradmin.backend.dtos.department;
  * </ul>
  *
  * <p>Typically derived from a projection and mapped before returning to clients.</p>
- *
- * @author kkusy
  */
 public record DepartmentOption(
         Long id,

@@ -13,8 +13,6 @@ package io.github.kkusylabs.useradmin.backend.dtos.department;
  * </ul>
  *
  * <p>Used within higher-level responses (e.g. list items) rather than returned standalone.</p>
- *
- * @author kkusy
  */
 public record DepartmentDetailsResponse(
         Long id,

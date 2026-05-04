@@ -8,8 +8,6 @@ import io.github.kkusylabs.useradmin.backend.exceptions.ConflictException;
  *
  * <p>Maps to HTTP 409 (Conflict) as the current state of the department
  * prevents the requested action (e.g. deleting a non-empty department).</p>
- *
- * @author kkusy
  */
 public class DepartmentNotEmptyException extends ConflictException {
 

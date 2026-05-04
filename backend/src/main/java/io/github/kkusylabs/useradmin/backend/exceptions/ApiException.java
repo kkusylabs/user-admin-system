@@ -11,8 +11,6 @@ import org.springframework.http.HttpStatus;
  * <p>Subclasses should represent meaningful business or domain errors
  * (e.g. "user not found", "username already exists") and define appropriate
  * HTTP status and error codes.</p>
- *
- * @author kkusy
  */
 public abstract class ApiException extends RuntimeException {
 

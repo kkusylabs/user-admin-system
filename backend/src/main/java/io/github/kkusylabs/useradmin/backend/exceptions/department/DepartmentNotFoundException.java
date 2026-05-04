@@ -6,8 +6,6 @@ import io.github.kkusylabs.useradmin.backend.exceptions.NotFoundException;
  * Thrown when a department with the specified identifier does not exist.
  *
  * <p>Maps to HTTP 404 (Not Found).</p>
- *
- * @author kkusy
  */
 public class DepartmentNotFoundException extends NotFoundException {
 

@@ -11,8 +11,6 @@ import java.util.List;
  *   <li><b>departments</b> – list of department entries (data + permissions)</li>
  *   <li><b>canCreate</b> – whether the user can create departments</li>
  * </ul>
- *
- * @author kkusy
  */
 public record DepartmentListResponse (
         List<DepartmentListItemResponse> departments,

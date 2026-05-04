@@ -31,8 +31,6 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>Business rules and authorization decisions are delegated to
  * {@link UserAuthorizationService} to keep this class focused on orchestration.
- *
- * @author kkusy
  */
 @Service
 public class UserService {
@@ -140,6 +138,14 @@ public class UserService {
         return toUserListItemResponse(targetUser, actor);
     }
 
+    /**
+     * Retrieves the data needed to render an edit-user form.
+     *
+     * @param targetUserId identifier of the user being edited
+     * @param actorId identifier of the authenticated actor
+     * @return user details and actor-relative update capabilities
+     * @throws UserNotFoundException if the actor or target user does not exist
+     */
     @Transactional(readOnly = true)
     public EditUserResponse getUserEditData(Long targetUserId, Long actorId) {
         User actor = getRequiredActor(actorId);
@@ -150,6 +156,20 @@ public class UserService {
                 userAuthorizationService.getUpdateCapabilities(actor, targetUser));
     }
 
+    /**
+     * Applies a partial update to a user.
+     *
+     * <p>Validates the PATCH payload, resolves any requested department change,
+     * checks authorization, and applies the update to the managed entity.</p>
+     *
+     * @param targetUserId identifier of the user being updated
+     * @param request requested field changes
+     * @param actorId identifier of the authenticated actor
+     * @return the updated user with actor-relative action flags
+     * @throws UserNotFoundException if the actor or target user does not exist
+     * @throws DepartmentNotFoundException if a requested department does not exist
+     * @throws InsufficientPermissionsException if the actor may not perform a requested change
+     */
     @Transactional
     public UserListItemResponse updateUser(Long targetUserId, UpdateUserRequest request, Long actorId) {
         User actor = getRequiredActor(actorId);
@@ -185,11 +205,25 @@ public class UserService {
         return userAuthorizationService.getCreateCapabilities(actor);
     }
 
+    /**
+     * Loads the authenticated actor.
+     *
+     * @param actorId actor identifier
+     * @return the actor user
+     * @throws UserNotFoundException if the actor does not exist
+     */
     private User getRequiredActor(Long actorId) {
         return userRepository.findById(actorId)
                 .orElseThrow(() -> new UserNotFoundException(actorId));
     }
 
+    /**
+     * Loads the target user for a command or query.
+     *
+     * @param targetUserId target user identifier
+     * @return the target user
+     * @throws UserNotFoundException if the target user does not exist
+     */
     private User getRequiredTargetUser(Long targetUserId) {
         return userRepository.findById(targetUserId)
                 .orElseThrow(() -> new UserNotFoundException(targetUserId));
@@ -207,6 +241,13 @@ public class UserService {
                 .orElseThrow(() -> new DepartmentNotFoundException(departmentId));
     }
 
+    /**
+     * Converts a target user to a response with permissions relative to the actor.
+     *
+     * @param targetUser user being returned
+     * @param actorUser authenticated actor
+     * @return list item response with action flags
+     */
     private UserListItemResponse toUserListItemResponse(User targetUser, User actorUser) {
         return userMapper.toListItemResponse(
                 targetUser,
@@ -215,6 +256,13 @@ public class UserService {
         );
     }
 
+    /**
+     * Resolves a department requested in a PATCH payload.
+     *
+     * @param departmentIdNullable nullable wrapper for the requested department id
+     * @return the resolved department, or {@code null} when no department change was requested
+     * @throws DepartmentNotFoundException if the requested department does not exist
+     */
     private Department resolveRequestedDepartment(JsonNullable<Long> departmentIdNullable) {
         Department requestedDepartment = null;
 

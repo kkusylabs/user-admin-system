@@ -4,10 +4,13 @@ import io.github.kkusylabs.useradmin.backend.models.Role;
 import io.github.kkusylabs.useradmin.backend.utils.StringNormalizer;
 import org.openapitools.jackson.nullable.JsonNullable;
 
+
 /**
  * Request payload for updating a user.
  *
- * <p>All fields are optional. {@code null} values are treated as unchanged.</p>
+ * <p>All fields are optional. Undefined fields are left unchanged. Fields that are
+ * present with {@code null} are treated as explicit clears only where allowed by
+ * validation rules.</p>
  *
  * @param fullName     updated display name
  * @param email        updated email address (must be valid if provided)
@@ -16,7 +19,6 @@ import org.openapitools.jackson.nullable.JsonNullable;
  * @param active       updated active state
  * @param departmentId updated department identifier
  * @param role         updated role
- * @author kkusy
  */
 public record UpdateUserRequest(
         JsonNullable<String> fullName,

@@ -16,8 +16,6 @@ import java.util.List;
  * This service is used during username/password login. It converts the
  * application's {@link io.github.kkusylabs.useradmin.backend.models.User}
  * entity into Spring Security's {@link UserDetails} representation.
- *
- * @author kkusy
  */
 @Service
 public class CustomUserDetailsService implements UserDetailsService {

@@ -8,26 +8,17 @@ import org.springframework.stereotype.Component;
 
 /**
  * Maps between {@link User} entities and user-related DTOs.
- *
- *
- *
- * <p>
- * Normalization and field-level transformations, such as trimming text and
- * hashing passwords, are handled here to keep service-layer code focused on
- * application flow.
- * </p>
  */
 @Component
 public final class UserMapper {
     /**
      * Creates a new {@link User} entity from a creation request.
      *
-     * <p>Copies fields from the request into a new entity and assigns the
-     * resolved {@link Department}. This method does not perform validation,
-     * apply defaults, or handle password encoding.</p>
+     * <p>The password is intentionally not copied here because it must be encoded
+     * before it is stored.</p>
      *
-     * @param request     the user creation request
-     * @param department  the resolved department, or {@code null}
+     * @param request user creation request
+     * @param department resolved department to assign
      * @return a new user entity populated from the request
      */
     public User fromCreateRequest(CreateUserRequest request, Department department) {
@@ -43,17 +34,15 @@ public final class UserMapper {
     }
 
     /**
-     * Applies an update request to an existing {@link User} entity.
+     * Applies a partial update request to an existing {@link User}.
      *
-     * <p>
-     * Only non-{@code null} fields in the request are applied. Fields omitted
-     * from the request are left unchanged.
-     * </p>
+     * <p>Only fields present in the request are applied. Present nullable fields
+     * such as phone and job title may clear the existing value.</p>
      *
-     * @param user the user entity to update
-     * @param request the update request
-     * @param requestedDepartment the resolved department to assign, or {@code null}
-     *                            if no department change was requested
+     * @param user user entity to update
+     * @param request update request
+     * @param requestedDepartment resolved department to assign when a department
+     *                            change was requested; otherwise {@code null}
      */
     public void updateUser(User user, UpdateUserRequest request, Department requestedDepartment) {
         if (request.fullName().isPresent())  {
@@ -85,6 +74,12 @@ public final class UserMapper {
         }
     }
 
+    /**
+     * Converts a user entity to a user detail response DTO.
+     *
+     * @param user user entity to convert
+     * @return detail response for the user
+     */
     public UserDetailResponse toDetailResponse(User user) {
         Department department = user.getDepartment();
 
@@ -105,18 +100,33 @@ public final class UserMapper {
         );
     }
 
+    /**
+     * Converts a user entity to a list item response.
+     *
+     * @param user user entity to convert
+     * @param canUpdate whether the current actor may update the user
+     * @param canDelete whether the current actor may delete the user
+     * @return list item response for the user
+     */
   public UserListItemResponse toListItemResponse(
             User user,
-            boolean canEdit,
+            boolean canUpdate,
             boolean canDelete
     ) {
         return new UserListItemResponse(
                 toDetailResponse(user),
-                canEdit,
+                canUpdate,
                 canDelete
         );
   }
 
+    /**
+     * Converts a user entity and update capabilities to an edit response.
+     *
+     * @param user user being edited
+     * @param updateCapabilities actor-relative update capabilities
+     * @return edit response for the user
+     */
     public EditUserResponse toEditResponse(
             User user,
             UpdateUserCapabilities updateCapabilities

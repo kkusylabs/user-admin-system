@@ -7,62 +7,32 @@ import io.github.kkusylabs.useradmin.backend.dtos.department.DepartmentOption;
 import io.github.kkusylabs.useradmin.backend.models.Role;
 
 /**
- * Represents the capabilities available to a user when updating another user.
+ * Describes the current actor's permissions and available options when updating a user.
  *
- * <p>This object is intended for UI/query use and describes what actions
- * and options should be presented when rendering an "edit user" form.</p>
+ * <p>This object is intended for query/UI use. It indicates which fields may be
+ * modified and which values may be assigned. It does not enforce authorization;
+ * command-side validation is handled by the service layer.</p>
  *
- * <p>It is NOT used for validation or authorization enforcement.</p>
+ * @param canUpdate whether the actor is allowed to update the target user at all
+ * @param canEditProfile whether basic profile fields (e.g., fullName, email, phone) may be edited
+ * @param canEditJobTitle whether the job title may be edited
+ * @param canEditRole whether the user's role may be changed
+ * @param canEditDepartment whether the user's department may be changed
+ * @param canEditActive whether the user's active status may be changed
+ * @param roleOptions roles the actor may assign (if role editing is allowed)
+ * @param departmentOptions departments available for selection; if editing is not allowed,
+ *                          contains the current department for display purposes
+ * @param reason explanation for denial when {@code canUpdate} is {@code false}, otherwise {@code null}
  */
 public record UpdateUserCapabilities(
-
-        /**
-         * Whether the actor is allowed to update the target user at all.
-         */
         boolean canUpdate,
-
-        /**
-         * Whether the actor can edit basic profile fields (e.g., fullName, email, phone).
-         */
         boolean canEditProfile,
-
-        /**
-         * Whether the actor can edit the job title.
-         */
         boolean canEditJobTitle,
-
-        /**
-         * Whether the actor can change the user's role.
-         */
         boolean canEditRole,
-
-        /**
-         * Whether the actor can change the user's department.
-         */
         boolean canEditDepartment,
-
-        /**
-         * Whether the actor can activate/deactivate the user.
-         */
         boolean canEditActive,
-
-        /**
-         * The set of roles the actor is allowed to assign (if role editing is allowed).
-         */
         Set<Role> roleOptions,
-
-        /**
-         * The list of department options to display in the UI.
-         *
-         * <p>If department editing is allowed, this will contain all selectable departments.
-         * If not allowed, this should contain the target user's current department (if any)
-         * so the UI can display it in a disabled control.</p>
-         */
         List<DepartmentOption> departmentOptions,
-
-        /**
-         * Reason explaining why the update is not allowed (if canUpdate is false).
-         */
         String reason
 
 ) {

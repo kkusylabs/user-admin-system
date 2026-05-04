@@ -8,8 +8,6 @@ import io.github.kkusylabs.useradmin.backend.exceptions.BadRequestException;
  *
  * <p>Indicates that the requested action cannot be performed because the
  * department is not active.</p>
- *
- * @author kkusy
  */
 public class InactiveDepartmentException extends BadRequestException {
 

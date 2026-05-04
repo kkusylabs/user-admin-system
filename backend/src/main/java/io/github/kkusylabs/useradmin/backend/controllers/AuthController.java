@@ -20,8 +20,6 @@ import java.util.Map;
  * <p>Provides endpoints for user registration and login. On successful
  * authentication, a JWT is returned to the client. The token is then used
  * to access protected API endpoints.</p>
- *
- * @author kkusy
  */
 @RestController
 @RequestMapping("/api/auth")

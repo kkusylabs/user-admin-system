@@ -29,8 +29,6 @@ import org.springframework.web.bind.annotation.*;
  *   <li><b>PUT /api/departments/{id}</b> – update department (admin only)</li>
  *   <li><b>DELETE /api/departments/{id}</b> – delete department (admin only)</li>
  * </ul>
- *
- * @author kkusy
  */
 @RestController
 @RequestMapping("/api/departments")

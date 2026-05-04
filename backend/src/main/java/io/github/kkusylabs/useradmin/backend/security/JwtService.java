@@ -17,8 +17,6 @@ import java.util.List;
  * <p>
  * Tokens produced by this service are later validated by Spring Security's
  * Resource Server support through the configured {@code JwtDecoder}.
- *
- * @author kkusy
  */
 @Service
 public class JwtService {

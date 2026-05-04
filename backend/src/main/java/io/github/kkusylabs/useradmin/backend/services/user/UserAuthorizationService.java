@@ -21,14 +21,8 @@ import java.util.*;
  * Service responsible for enforcing authorization rules for {@link User} operations.
  *
  * <p>Centralizes permission checks and capability calculations for creating,
- * updating, and deleting users. Rules are evaluated based on the acting user
- * ("actor"), the target user, and business constraints such as role and department.</p>
- *
- * <p>This service separates authorization logic from application flow, allowing
- * controllers and services to delegate permission decisions to a single component.</p>
- *
- * <p><strong>Note:</strong> Update-related authorization is currently a stub and
- * will be implemented in a future iteration.</p>
+ * updating, and deleting users. Rules are evaluated based on the authenticated
+ * actor, the target user, and business constraints such as role and department.</p>
  */
 @Component
 public class UserAuthorizationService {
@@ -36,11 +30,6 @@ public class UserAuthorizationService {
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
 
-    /**
-     * Creates a new authorization service.
-     *
-     * @param userRepository repository used for queries required by authorization rules
-     */
     public UserAuthorizationService(
             UserRepository userRepository,
             DepartmentRepository departmentRepository
@@ -49,10 +38,25 @@ public class UserAuthorizationService {
         this.departmentRepository = departmentRepository;
     }
 
+    /**
+     * Checks whether the actor may create users.
+     *
+     * @param actor authenticated actor
+     * @return {@code true} if creation is allowed
+     */
     public boolean canCreate(User actor) {
         return getCreatePolicy(actor).canCreate();
     }
 
+    /**
+     * Resolves the create policy for the actor.
+     *
+     * <p>Admins may create users. Managers may create users only when they belong
+     * to an active department. Basic users may not create users.</p>
+     *
+     * @param actor authenticated actor
+     * @return the resolved create policy
+     */
     private CreateUserPolicy getCreatePolicy(User actor) {
         if (actor.isAdmin()) {
             return CreateUserPolicy.allowed();
@@ -75,6 +79,15 @@ public class UserAuthorizationService {
         );
     }
 
+    /**
+     * Validates a create-user command against actor, role, and department rules.
+     *
+     * @param actor authenticated actor
+     * @param role requested role for the new user
+     * @param department requested department for the new user
+     * @throws InsufficientPermissionsException if creation or assignment is not allowed
+     * @throws InactiveDepartmentException if the requested department is inactive
+     */
     public void validateCreateRequest(User actor, Role role, Department department) {
         CreateUserPolicy policy = getCreatePolicy(actor);
         requirePermission(policy.canCreate(), policy.reason());
@@ -97,6 +110,16 @@ public class UserAuthorizationService {
         return assignableRoles.contains(role);
     }
 
+    /**
+     * Determines whether the actor may assign the requested department during creation.
+     *
+     * <p>Admins may assign any active department. Managers may assign only their own
+     * department.</p>
+     *
+     * @param actor authenticated actor
+     * @param department requested department
+     * @return {@code true} if the department may be assigned
+     */
     private boolean canAssignDepartmentForCreate(User actor, Department department) {
         // Admins can assign to any department (active check handled elsewhere)
         if (actor.isAdmin()) {
@@ -112,6 +135,16 @@ public class UserAuthorizationService {
         return false;
     }
 
+    /**
+     * Builds the actor's create-user capabilities.
+     *
+     * <p>The result is intended for query/UI use and describes whether creation is
+     * available, which roles and departments may be assigned, and why creation is
+     * unavailable if denied.</p>
+     *
+     * @param actor authenticated actor
+     * @return create capabilities for the actor
+     */
     public CreateUserCapabilities getCreateCapabilities(User actor) {
         CreateUserPolicy policy = getCreatePolicy(actor);
         if (!policy.canCreate()) {
@@ -136,6 +169,12 @@ public class UserAuthorizationService {
         );
     }
 
+    /**
+     * Returns the roles the actor may assign during user creation.
+     *
+     * @param actor authenticated actor
+     * @return assignable roles
+     */
     private Set<Role> getAssignableRolesForCreate(User actor) {
         if (actor.isAdmin()) {
             return EnumSet.allOf(Role.class);
@@ -148,6 +187,12 @@ public class UserAuthorizationService {
         return EnumSet.noneOf(Role.class);
     }
 
+    /**
+     * Returns the departments the actor may assign during user creation.
+     *
+     * @param actor authenticated actor
+     * @return assignable departments
+     */
     private List<DepartmentOption> getAssignableDepartmentsForCreate(User actor) {
         if (actor.isAdmin()) {
             return getSelectableDepartmentOptionsForCreate();
@@ -170,10 +215,27 @@ public class UserAuthorizationService {
                 .toList();
     }
 
+    /**
+     * Checks whether the actor may delete the target user.
+     *
+     * @param actor authenticated actor
+     * @param target user being deleted
+     * @return {@code true} if deletion is allowed
+     */
     public boolean canDelete(User actor, User target) {
         return getDeletePolicy(actor, target).canDelete();
     }
 
+    /**
+     * Resolves the delete policy for the actor and target user.
+     *
+     * <p>Users may not delete themselves. Admins may delete other users. Managers
+     * may delete only basic users in their own department.</p>
+     *
+     * @param actor authenticated actor
+     * @param target user being deleted
+     * @return the resolved delete policy
+     */
     private DeleteUserPolicy getDeletePolicy(User actor, User target) {
         if (sameUser(actor, target)) {
             return DeleteUserPolicy.denied("You may not delete your own account.");
@@ -197,6 +259,14 @@ public class UserAuthorizationService {
         );
     }
 
+    /**
+     * Validates a delete-user command.
+     *
+     * @param actor authenticated actor
+     * @param target user being deleted
+     * @throws InsufficientPermissionsException if deletion is not allowed
+     * @throws LastActiveAdminDeletionException if deletion would remove the last active admin
+     */
     public void validateDeletionRequest(User actor, User target) {
         DeleteUserPolicy policy = getDeletePolicy(actor, target);
 
@@ -210,10 +280,27 @@ public class UserAuthorizationService {
         }
     }
 
+    /**
+     * Checks whether the actor may update the target user.
+     *
+     * @param actor authenticated actor
+     * @param target user being updated
+     * @return {@code true} if updating is allowed
+     */
     public boolean canUpdate(User actor, User target) {
         return getUpdatePolicy(actor, target).canUpdate();
     }
 
+    /**
+     * Resolves the update policy for the actor and target user.
+     *
+     * <p>Admins may update other users. Managers may update basic users in their own
+     * department. Users may update themselves within a limited profile-only scope.</p>
+     *
+     * @param actor authenticated actor
+     * @param target user being updated
+     * @return the resolved update policy
+     */
     public UpdateUserPolicy getUpdatePolicy(User actor, User target) {
 
         // Cannot update yourself beyond allowed scope (handled below, but keep this first for clarity if needed)
@@ -239,6 +326,17 @@ public class UserAuthorizationService {
         );
     }
 
+    /**
+     * Validates a partial update command against the actor's update policy.
+     *
+     * @param actor authenticated actor
+     * @param target user being updated
+     * @param request requested field changes
+     * @param department resolved requested department, or {@code null} if unchanged
+     * @throws InsufficientPermissionsException if any requested change is not allowed
+     * @throws InactiveDepartmentException if the requested department is inactive
+     * @throws LastActiveAdminUpdateException if the update would remove the last active admin
+     */
     public void validateUpdateRequest(
             User actor,
             User target,
@@ -293,6 +391,10 @@ public class UserAuthorizationService {
         );
     }
 
+    /**
+     * Validates requested role changes, including whether the actor may assign the
+     * requested role.
+     */
     private void validateRoleChange(
             UpdateUserPolicy policy,
             UpdateUserRequest request,
@@ -319,6 +421,12 @@ public class UserAuthorizationService {
         return assignableRoles.contains(role);
     }
 
+    /**
+     * Validates requested department changes.
+     *
+     * <p>When a department change is requested, the actor must be allowed to edit
+     * departments and the requested department must be active.</p>
+     */
     private void validateDepartmentChange(
             UpdateUserPolicy policy,
             UpdateUserRequest request,
@@ -352,6 +460,9 @@ public class UserAuthorizationService {
         );
     }
 
+    /**
+     * Prevents updates that would leave the system without an active administrator.
+     */
     private void validateLastActiveAdminInvariant(
             UpdateUserRequest request,
             User target
@@ -376,6 +487,16 @@ public class UserAuthorizationService {
         }
     }
 
+    /**
+     * Builds the actor's update capabilities for the target user.
+     *
+     * <p>The result is intended for query/UI use and includes editable fields,
+     * selectable roles, selectable departments, and an optional denial reason.</p>
+     *
+     * @param actor authenticated actor
+     * @param target user being edited
+     * @return update capabilities for the actor and target
+     */
     public UpdateUserCapabilities getUpdateCapabilities(User actor, User target) {
         UpdateUserPolicy policy = getUpdatePolicy(actor, target);
 
@@ -411,6 +532,12 @@ public class UserAuthorizationService {
         );
     }
 
+    /**
+     * Returns department options for an update form.
+     *
+     * <p>If department editing is not allowed, only the current department is
+     * returned so clients can display it without allowing changes.</p>
+     */
     private List<DepartmentOption> getDepartmentOptionsForUpdate(
             User actor,
             User target,
@@ -426,6 +553,9 @@ public class UserAuthorizationService {
         );
     }
 
+    /**
+     * Returns departments the actor may assign during update.
+     */
     private List<DepartmentOption> getAssignableDepartmentOptionsForUpdate(
             User actor,
             User target
@@ -447,6 +577,12 @@ public class UserAuthorizationService {
         return List.of();
     }
 
+    /**
+     * Adds the current department to the option list when it is not already present.
+     *
+     * <p>This allows clients to display the current value even if it is no longer
+     * otherwise selectable.</p>
+     */
     private List<DepartmentOption> includeCurrentDepartmentIfMissing(
             List<DepartmentOption> options,
             Department currentDepartment
@@ -489,6 +625,9 @@ public class UserAuthorizationService {
         return EnumSet.of(role);
     }
 
+    /**
+     * Returns roles the actor may assign during update.
+     */
     private Set<Role> getAssignableRolesForUpdate(User actor, User target) {
         if (!actor.isAdmin()) {
             return EnumSet.noneOf(Role.class);
@@ -501,6 +640,12 @@ public class UserAuthorizationService {
         return EnumSet.allOf(Role.class);
     }
 
+    /**
+     * Adds the current role to the option set when it is not already present.
+     *
+     * <p>This allows clients to display the current value even if it is no longer
+     * otherwise assignable.</p>
+     */
     private Set<Role> includeCurrentRoleIfMissing(Set<Role> options, Role currentRole) {
         if (currentRole == null || options.contains(currentRole)) {
             return options;
@@ -512,18 +657,29 @@ public class UserAuthorizationService {
         return result;
     }
 
+    /**
+     * Checks whether two users represent the same persisted user.
+     */
     public static boolean sameUser(User a, User b) {
         return a != null
                 && b != null
                 && Objects.equals(a.getId(), b.getId());
     }
 
+    /**
+     * Checks whether two departments represent the same persisted department.
+     */
     public static boolean sameDepartment(Department a, Department b) {
         return a != null
                 && b != null
                 && Objects.equals(a.getId(), b.getId());
     }
 
+    /**
+     * Checks whether a manager may manage the target user.
+     *
+     * <p>Managers may manage only basic users in their own department.</p>
+     */
     public static boolean canManageUser(User actor, User target) {
         return actor != null
                 && target != null
@@ -533,11 +689,11 @@ public class UserAuthorizationService {
     }
 
     /**
-     * Determines whether deleting the given user would leave the system without
-     * any active administrators.
+     * Determines whether changing or deleting the given user would leave the system
+     * without any active administrators.
      *
-     * @param user the user being evaluated
-     * @return {@code true} if this is the last active administrator
+     * @param user user being evaluated
+     * @return {@code true} if the user is the last active admin
      */
     public boolean wouldLeaveSystemWithoutActiveAdmin(User user) {
         return user.isAdmin()

@@ -8,8 +8,6 @@ import org.springframework.http.HttpStatus;
  * <p>Used for exceptions caused by invalid input or business rule violations.</p>
  *
  * <p>Subclasses should provide a domain-specific error code and message.</p>
- *
- * @author kkusy
  */
 public abstract class BadRequestException extends ApiException {
     /**

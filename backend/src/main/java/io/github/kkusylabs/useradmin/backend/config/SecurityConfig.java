@@ -36,8 +36,6 @@ import java.nio.charset.StandardCharsets;
  *     <li>stateless session management</li>
  *     <li>method-level security for business authorization rules</li>
  * </ul>
- *
- * @author kkusy
  */
 @Configuration
 @EnableMethodSecurity

@@ -10,8 +10,6 @@ import java.util.Objects;
  * A user has login-related fields such as username and password hash,
  * along with profile-style fields such as full name and email address.
  * Each user belongs to exactly one department and has exactly one role.
- *
- * @author kkusy
  */
 @Entity
 @Table(name = "users")

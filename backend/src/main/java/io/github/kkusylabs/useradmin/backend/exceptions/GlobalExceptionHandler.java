@@ -25,23 +25,19 @@ import java.util.Optional;
 /**
  * Centralized exception handler for REST controllers.
  *
- * <p>Translates application and validation exceptions into consistent
- * HTTP responses using {@link ProblemDetail}. Ensures that all errors
- * returned by the API follow a predictable structure.</p>
+ * <p>Maps application, validation, and security exceptions to consistent
+ * HTTP error responses using {@link ProblemDetail}.</p>
  *
- * <p>Handled exception types include:</p>
+ * <p>All responses include a stable {@code code} for programmatic handling
+ * and may include field-level validation errors when applicable.</p>
+ *
+ * <p>Handled categories include:</p>
  * <ul>
- *     <li>{@link ApiException} – domain/business errors with explicit HTTP semantics</li>
- *     <li>{@link MethodArgumentNotValidException} – validation errors for request bodies</li>
- *     <li>{@link HandlerMethodValidationException} – validation errors for request parameters</li>
- *     <li>{@link ConstraintViolationException} – constraint violations outside MVC binding</li>
- *     <li>{@link Exception} – fallback for unexpected errors</li>
+ *   <li>{@link ApiException} – domain/business errors with defined HTTP semantics</li>
+ *   <li>Validation errors – request body, parameters, and constraint violations</li>
+ *   <li>Security errors – authentication and authorization failures</li>
+ *   <li>Fallback – unexpected exceptions</li>
  * </ul>
- *
- * <p>Each response includes a stable {@code code} for programmatic handling,
- * along with optional validation error details when applicable.</p>
- *
- * @author kkusy
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -50,6 +46,8 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles domain-specific exceptions.
+     *
+     * <p>Uses the status and error code defined by the exception.</p>
      */
     @ExceptionHandler(ApiException.class)
     public ProblemDetail handleApiException(ApiException ex, HttpServletRequest request) {
@@ -65,6 +63,8 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles validation errors for {@code @Valid @RequestBody}.
+     *
+     * <p>Collects field-level errors and returns them as a map of field names to messages.</p>
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleMethodArgumentNotValid(
@@ -91,6 +91,8 @@ public class GlobalExceptionHandler {
     /**
      * Handles validation errors for controller method parameters
      * (e.g. {@code @RequestParam}, {@code @PathVariable}).
+     *
+     * <p>Maps parameter names to validation messages.</p>
      */
     @ExceptionHandler(HandlerMethodValidationException.class)
     public ProblemDetail handleHandlerMethodValidation(
@@ -121,7 +123,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handles constraint violations outside standard request binding.
+     * Handles constraint violations raised outside standard request binding.
+     *
+     * <p>Typically triggered by validation on method parameters or service-layer
+     * constraints. Each violation is mapped to a property path and message.</p>
      */
     @ExceptionHandler(ConstraintViolationException.class)
     public ProblemDetail handleConstraintViolation(
@@ -145,6 +150,11 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    /**
+     * Handles authentication failures.
+     *
+     * <p>Returned when credentials are missing or invalid.</p>
+     */
     @ExceptionHandler(AuthenticationException.class)
     public ProblemDetail handleAuthentication(AuthenticationException ex, HttpServletRequest request) {
         ProblemDetail problem = createProblem(
@@ -157,6 +167,12 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    /**
+     * Handles authorization failures.
+     *
+     * <p>Returned when the authenticated user lacks permission to perform the
+     * requested operation.</p>
+     */
     @ExceptionHandler(AccessDeniedException.class)
     public ProblemDetail handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
         ProblemDetail problem = createProblem(
@@ -171,6 +187,9 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles unexpected exceptions.
+     *
+     * <p>If the exception implements {@link ErrorResponse}, its {@link ProblemDetail}
+     * is reused. Otherwise, a generic internal server error response is returned.</p>
      */
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGeneric(Exception ex, HttpServletRequest request) {
@@ -178,6 +197,11 @@ public class GlobalExceptionHandler {
             ProblemDetail problem = errorResponse.getBody();
             problem.setInstance(URI.create(request.getRequestURI()));
             problem.setProperty("timestamp", Instant.now());
+
+            if (problem.getProperties() == null || !problem.getProperties().containsKey("code")) {
+                problem.setProperty("code", "SPRING_ERROR");
+            }
+
             return problem;
         }
 
