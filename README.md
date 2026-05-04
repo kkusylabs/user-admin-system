@@ -177,7 +177,7 @@ cd backend
 
 ### Requirements
 
-* Java 17+
+* Java 21+
 * Docker (for PostgreSQL)
 
 ### Run locally (Spring Boot via Maven)
@@ -208,6 +208,49 @@ Runs both:
    docker compose up --build
    ```
 
+## Using Swagger UI
+
+After starting the application, open Swagger UI:
+
+```text
+http://localhost:8080/swagger-ui/index.html
+```
+
+Swagger UI lets you view and test the API endpoints from your browser.
+
+### Log in
+1. Open `POST /api/auth/login`
+2. Click **Try it out**
+3. Enter credentials:
+   ```json
+   {
+      "username: "admin",
+      "password: "admin"
+   }
+   ```
+4. Click **Execute**
+5. Copy the `accessToken` from the response
+
+### Authorize request
+1. Click **Authorize** near the top of the page
+2. Enter the token
+3. Click **Authorize**
+4. Close the dialog
+
+You can now call protected endpoints from Swagger UI.
+
+### Verify authentication
+
+Open `GET /api/auth/me` and click **Execute**
+
+If Authorization is working, it returns the currently authenticated user
+
+### Example workflow
+
+1. Log in
+2. Authorize using your token
+3. Call `GET /api/departments` to view departments
+4. Call `POST /api/departments` (admin only) to create one
 ---
 
 ## Database
