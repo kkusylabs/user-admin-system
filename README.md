@@ -158,9 +158,16 @@ The project includes:
 * Repository tests
 * Coverage of authorization rules and edge cases
 
-Run tests:
+### Requirements
+
+* Docker (required for Testcontainers)
+
+### Run tests
+
+From the **backend module**:
 
 ```bash
+cd backend
 ./mvnw test
 ```
 
@@ -171,19 +178,41 @@ Run tests:
 ### Requirements
 
 * Java 17+
-* Maven
+* Docker (for PostgreSQL)
 
-### Start the application
+### Run locally (Spring Boot via Maven)
 
+From the **backend module**:
 ```bash
-./mvnw spring-boot:run
+cd backend
 ```
+
+1. Start PostgreSQL
+   ```bash
+   docker compose up -d postgres
+   ```
+
+2. Start the application:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+---
+### Run full stack with Docker Compose
+
+Runs both:
+* Spring Boot app
+* PostgreSQL
+
+   ```bash
+   cd backend
+   docker compose up --build
+   ```
 
 ---
 
 ## Database
 
-* Easily configurable for PostgreSQL
+* PostgreSQL
 
 ---
 
