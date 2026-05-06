@@ -11,7 +11,7 @@
 		<relativePath>../io.github.kkusylabs.useradmin.client.master</relativePath>
 	</parent>
 
-	<artifactId>io.github.kkusylabs.useradmin.client</artifactId>
+	<artifactId>io.github.kkusylabs.useradmin.client.core</artifactId>
 	<packaging>eclipse-plugin</packaging>
 
 </project>

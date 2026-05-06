@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Core
+Bundle-SymbolicName: io.github.kkusylabs.useradmin.client.core
+Bundle-Version: 1.0.0.qualifier
+Automatic-Module-Name: io.github.kkusylabs.useradmin.client.core
+Bundle-RequiredExecutionEnvironment: JavaSE-21

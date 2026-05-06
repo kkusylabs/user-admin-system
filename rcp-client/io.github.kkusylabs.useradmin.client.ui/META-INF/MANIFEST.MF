@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Client
-Bundle-SymbolicName: io.github.kkusylabs.useradmin.client
+Bundle-SymbolicName: io.github.kkusylabs.useradmin.client.ui
 Bundle-Version: 1.0.0.qualifier
 Require-Bundle: org.eclipse.swt,
  org.eclipse.jface,

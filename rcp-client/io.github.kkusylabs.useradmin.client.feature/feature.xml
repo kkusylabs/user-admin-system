@@ -17,11 +17,15 @@
    </license>
 
    <plugin
-         id="io.github.kkusylabs.useradmin.client"
+         id="io.github.kkusylabs.useradmin.client.branding"
          version="0.0.0"/>
 
    <plugin
-         id="io.github.kkusylabs.useradmin.client.branding"
+         id="io.github.kkusylabs.useradmin.client.ui"
+         version="0.0.0"/>
+
+   <plugin
+         id="io.github.kkusylabs.useradmin.client.core"
          version="0.0.0"/>
 
 </feature>

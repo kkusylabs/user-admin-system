@@ -15,7 +15,8 @@
 	</properties>
 
 	<modules>
-		<module>../io.github.kkusylabs.useradmin.client</module>
+		<module>../io.github.kkusylabs.useradmin.client.core</module>
+		<module>../io.github.kkusylabs.useradmin.client.ui</module>
 		<module>../io.github.kkusylabs.useradmin.client.branding</module>
 		<module>../io.github.kkusylabs.useradmin.client.feature</module>
 		<module>../io.github.kkusylabs.useradmin.client.product</module>
