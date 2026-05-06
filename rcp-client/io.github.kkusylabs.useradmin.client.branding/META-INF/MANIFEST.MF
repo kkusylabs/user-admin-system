@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Branding
+Bundle-SymbolicName: io.github.kkusylabs.useradmin.client.branding;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Require-Bundle: org.eclipse.equinox.app
+Automatic-Module-Name: io.github.kkusylabs.useradmin.client.branding
+Bundle-RequiredExecutionEnvironment: JavaSE-21
