@@ -3,7 +3,11 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Core
 Bundle-SymbolicName: io.github.kkusylabs.useradmin.client.core
 Bundle-Version: 1.0.0.qualifier
-Export-Package: io.github.kkusylabs.useradmin.client.core.api
+Export-Package: io.github.kkusylabs.useradmin.client.core.api,
+ io.github.kkusylabs.useradmin.client.core.api.auth,
+ io.github.kkusylabs.useradmin.client.core.api.department,
+ io.github.kkusylabs.useradmin.client.core.api.user,
+ io.github.kkusylabs.useradmin.client.core.auth
 Require-Bundle: com.fasterxml.jackson.core.jackson-annotations,
  com.fasterxml.jackson.core.jackson-core,
  com.fasterxml.jackson.core.jackson-databind
