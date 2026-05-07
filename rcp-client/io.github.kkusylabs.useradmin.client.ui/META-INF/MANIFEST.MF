@@ -11,6 +11,7 @@ Require-Bundle: org.eclipse.swt,
  org.eclipse.e4.ui.model.workbench,
  org.eclipse.e4.ui.services,
  org.eclipse.e4.ui.workbench,
- org.eclipse.e4.ui.workbench.swt
+ org.eclipse.e4.ui.workbench.swt,
+ io.github.kkusylabs.useradmin.client.core
 Automatic-Module-Name: io.github.kkusylabs.useradmin.client
 Bundle-RequiredExecutionEnvironment: JavaSE-21

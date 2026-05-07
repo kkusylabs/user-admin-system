@@ -3,5 +3,9 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Core
 Bundle-SymbolicName: io.github.kkusylabs.useradmin.client.core
 Bundle-Version: 1.0.0.qualifier
+Export-Package: io.github.kkusylabs.useradmin.client.core.api
+Require-Bundle: com.fasterxml.jackson.core.jackson-annotations,
+ com.fasterxml.jackson.core.jackson-core,
+ com.fasterxml.jackson.core.jackson-databind
 Automatic-Module-Name: io.github.kkusylabs.useradmin.client.core
 Bundle-RequiredExecutionEnvironment: JavaSE-21
