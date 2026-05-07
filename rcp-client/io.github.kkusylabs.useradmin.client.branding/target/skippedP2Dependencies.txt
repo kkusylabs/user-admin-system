@@ -1,0 +1,4 @@
+p2.eclipse.plugin:org.eclipse.equinox.app:eclipse-plugin @ C:\Users\kkusy\.m2\repository\p2\osgi\bundle\org.eclipse.equinox.app\1.7.600.v20251211-1038\org.eclipse.equinox.app-1.7.600.v20251211-1038.jar
+p2.eclipse.plugin:org.eclipse.equinox.common:eclipse-plugin @ C:\Users\kkusy\.m2\repository\p2\osgi\bundle\org.eclipse.equinox.common\3.20.300.v20251111-0312\org.eclipse.equinox.common-3.20.300.v20251111-0312.jar
+p2.eclipse.plugin:org.eclipse.equinox.registry:eclipse-plugin @ C:\Users\kkusy\.m2\repository\p2\osgi\bundle\org.eclipse.equinox.registry\3.12.600.v20250906-0651\org.eclipse.equinox.registry-3.12.600.v20250906-0651.jar
+p2.eclipse.plugin:org.eclipse.osgi:eclipse-plugin @ C:\Users\kkusy\.m2\repository\p2\osgi\bundle\org.eclipse.osgi\3.24.100.v20251215-1416\org.eclipse.osgi-3.24.100.v20251215-1416.jar

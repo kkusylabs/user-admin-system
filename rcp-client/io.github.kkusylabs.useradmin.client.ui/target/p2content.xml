@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<units size='1'>
+  <unit id='io.github.kkusylabs.useradmin.client.ui' version='1.0.0.202605062350' singleton='false' generation='2'>
+    <update id='io.github.kkusylabs.useradmin.client.ui' range='[0.0.0,1.0.0.202605062350)' severity='0'/>
+    <properties size='5'>
+      <property name='org.eclipse.equinox.p2.name' value='Client'/>
+      <property name='maven-groupId' value='io.github.kkusylabs.useradmin'/>
+      <property name='maven-artifactId' value='io.github.kkusylabs.useradmin.client.ui'/>
+      <property name='maven-version' value='1.0.0-SNAPSHOT'/>
+      <property name='maven-type' value='eclipse-plugin'/>
+    </properties>
+    <provides size='4'>
+      <provided namespace='org.eclipse.equinox.p2.iu' name='io.github.kkusylabs.useradmin.client.ui' version='1.0.0.202605062350'/>
+      <provided namespace='osgi.bundle' name='io.github.kkusylabs.useradmin.client.ui' version='1.0.0.202605062350'/>
+      <provided namespace='osgi.identity' name='io.github.kkusylabs.useradmin.client.ui' version='1.0.0.202605062350'>
+        <properties size='1'>
+          <property name='type' value='osgi.bundle'/>
+        </properties>
+      </provided>
+      <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='bundle' version='1.0.0'/>
+    </provides>
+    <requires size='11'>
+      <required namespace='osgi.bundle' name='org.eclipse.swt' range='0.0.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.jface' range='0.0.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.core.runtime' range='0.0.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.e4.core.contexts' range='0.0.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.e4.core.di' range='0.0.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.e4.ui.model.workbench' range='0.0.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.e4.ui.services' range='0.0.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.e4.ui.workbench' range='0.0.0'/>
+      <required namespace='osgi.bundle' name='org.eclipse.e4.ui.workbench.swt' range='0.0.0'/>
+      <requiredProperties namespace='osgi.ee' match='(&amp;(osgi.ee=JavaSE)(version=21))'>
+        <description>
+          io.github.kkusylabs.useradmin.client.ui
+        </description>
+      </requiredProperties>
+      <required namespace='org.eclipse.equinox.p2.iu' name='io.github.kkusylabs.useradmin.client.ui.source' range='[1.0.0.202605062350,1.0.0.202605062350]' optional='true'>
+        <filter>
+          (org.eclipse.update.install.sources=true)
+        </filter>
+      </required>
+    </requires>
+    <artifacts size='1'>
+      <artifact classifier='osgi.bundle' id='io.github.kkusylabs.useradmin.client.ui' version='1.0.0.202605062350'/>
+    </artifacts>
+    <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+    <touchpointData size='1'>
+      <instructions size='1'>
+        <instruction key='manifest'>
+          Bundle-SymbolicName: io.github.kkusylabs.useradmin.client.ui&#xA;Bundle-Version: 1.0.0.202605062350&#xA;
+        </instruction>
+      </instructions>
+    </touchpointData>
+  </unit>
+</units>
