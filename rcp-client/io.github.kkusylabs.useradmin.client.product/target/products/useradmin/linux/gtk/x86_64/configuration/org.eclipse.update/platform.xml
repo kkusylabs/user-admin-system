@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<config date="1778111432512" transient="false">
-	<site updateable="true" url="platform:/base/" enabled="true" policy="USER-EXCLUDE">
-		<feature id="io.github.kkusylabs.useradmin.client.feature" version="1.0.0.202605062350" url="features/io.github.kkusylabs.useradmin.client.feature_1.0.0.202605062350/">
-		</feature>
-		<feature id="org.eclipse.e4.rcp" version="4.39.0.v20260225-1014" url="features/org.eclipse.e4.rcp_4.39.0.v20260225-1014/">
-		</feature>
-	</site>
-</config>
