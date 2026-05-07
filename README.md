@@ -233,7 +233,7 @@ Swagger UI lets you view and test the API endpoints from your browser.
 
 ### Authorize request
 1. Click **Authorize** near the top of the page
-2. Enter the token
+2. Paste the `accessToken` in the text field
 3. Click **Authorize**
 4. Close the dialog
 
