@@ -6,7 +6,7 @@ A Spring Boot backend for managing users, roles, and departments with a focus on
 
 ## Overview
 
-This project models a typical internal admin system where user management is constrained by role- and department-based permissi.
+This project models a typical internal admin system where user management is constrained by role- and department-based permissions.
 
 It emphasizes:
 
