@@ -1,6 +1,6 @@
 package io.github.kkusylabs.useradmin.client.core.api.user;
 
-import io.github.kkusylabs.useradmin.client.core.common.PagedResponse;
+import io.github.kkusylabs.useradmin.client.core.api.common.PagedResponse;
 
 /**
  * Paginated response for the user list endpoint.

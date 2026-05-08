@@ -36,6 +36,9 @@ public class UserApiClient {
 			if (filter.role() != null) {
 				queryParams.put("role", filter.role().name());
 			}
+			if (filter.sort() != null) {
+				queryParams.put("sort", filter.sort().toQueryValue());
+			}
 		}
 
 		return restClient.get("/users", queryParams, UserListResponse.class);

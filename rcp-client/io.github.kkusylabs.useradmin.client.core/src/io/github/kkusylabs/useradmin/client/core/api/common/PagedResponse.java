@@ -1,4 +1,4 @@
-package io.github.kkusylabs.useradmin.client.core.common;
+package io.github.kkusylabs.useradmin.client.core.api.common;
 
 import java.util.List;
 
