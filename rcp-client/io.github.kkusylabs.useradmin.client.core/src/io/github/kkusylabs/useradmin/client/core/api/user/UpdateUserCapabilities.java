@@ -6,16 +6,15 @@ import java.util.Set;
 import io.github.kkusylabs.useradmin.client.core.api.department.DepartmentOption;
 
 public record UpdateUserCapabilities(
-    boolean canUpdate,
-    boolean canEditFullName,
-    boolean canEditEmail,
-    boolean canEditPhone,
-    boolean canEditJobTitle,
-    boolean canEditActive,
-    boolean canEditDepartment,
-    boolean canEditRole,
-    Set<Role> assignableRoles,
-    List<DepartmentOption> assignableDepartments,
-    String reason
-) {
+		boolean canUpdate, 
+		boolean canEditFullName, 
+		boolean canEditEmail,
+		boolean canEditPhone, 
+		boolean canEditJobTitle, 
+		boolean canEditActive, 
+		boolean canEditDepartment,
+		boolean canEditRole, 
+		Set<Role> assignableRoles, 
+		List<DepartmentOption> assignableDepartments, 
+		String reason) {
 }
