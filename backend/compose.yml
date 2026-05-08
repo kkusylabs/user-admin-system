@@ -1,0 +1,36 @@
+# Demo stack.
+#
+# Use this for the default public/demo experience:
+#   docker compose up --build
+#
+# Starts:
+# - Spring Boot app with the "demo" profile
+# - Disposable Postgres database with rich demo seed data
+#
+# The demo profile uses ddl-auto=create, so the database schema is recreated
+# when the app starts. Do not use this with data you want to keep.
+
+services:
+  app:
+    build: .
+    container_name: user-admin-demo-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: demo
+      DB_URL: jdbc:postgresql://db:5432/user_admin_demo
+      DB_USER: user_admin_app
+      DB_PASSWORD: password123
+      APP_JWT_SECRET: demo-only-secret-key-at-least-32-bytes-long
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16
+    container_name: user-admin-demo-db
+    environment:
+      POSTGRES_DB: user_admin_demo
+      POSTGRES_USER: user_admin_app
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5432:5432"

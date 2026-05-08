@@ -1,0 +1,36 @@
+# Client-test stack.
+#
+# Use this for testing client integrations against a small, predictable dataset:
+#   docker compose -f compose.client-test.yml up --build
+#
+# Starts:
+# - Spring Boot app with the "client-test" profile
+# - Disposable Postgres database with deterministic client-test seed data
+#
+# The client-test profile uses ddl-auto=create, so the database schema is
+# recreated when the app starts. Do not use this with data you want to keep.
+
+services:
+  app:
+    build: .
+    container_name: user-admin-client-test-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: client-test
+      DB_URL: jdbc:postgresql://db:5432/user_admin_client_test
+      DB_USER: user_admin_app
+      DB_PASSWORD: password123
+      APP_JWT_SECRET: client-test-only-secret-key-at-least-32-bytes-long
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16
+    container_name: user-admin-client-test-db
+    environment:
+      POSTGRES_DB: user_admin_client_test
+      POSTGRES_USER: user_admin_app
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5432:5432"
