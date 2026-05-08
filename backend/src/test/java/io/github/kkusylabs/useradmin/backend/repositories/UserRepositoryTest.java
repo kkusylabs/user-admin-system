@@ -5,6 +5,7 @@ import io.github.kkusylabs.useradmin.backend.config.JpaConfig;
 import io.github.kkusylabs.useradmin.backend.models.Department;
 import io.github.kkusylabs.useradmin.backend.models.Role;
 import io.github.kkusylabs.useradmin.backend.models.User;
+import io.github.kkusylabs.useradmin.backend.services.user.UserSpecifications;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -89,7 +90,9 @@ class UserRepositoryTest {
         userRepository.save(user("jdoe", "jdoe@example.com", Role.USER, sales, true));
         userRepository.save(user("asmith", "asmith@example.com", Role.MANAGER, engineering, true));
 
-        Page<User> page = userRepository.findAll(PageRequest.of(0, 10));
+        Page<User> page = userRepository.findAll(
+                UserSpecifications.filter(null, null, null, null),
+                PageRequest.of(0, 10));
 
         assertEquals(2, page.getTotalElements());
 

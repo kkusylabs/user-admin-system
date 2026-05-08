@@ -1,6 +1,7 @@
 package io.github.kkusylabs.useradmin.backend.controllers;
 
 import io.github.kkusylabs.useradmin.backend.dtos.user.*;
+import io.github.kkusylabs.useradmin.backend.models.Role;
 import io.github.kkusylabs.useradmin.backend.security.CurrentActorId;
 import io.github.kkusylabs.useradmin.backend.services.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -71,7 +73,17 @@ public class UserController {
     @GetMapping
     @Operation(
             summary = "Get users",
-            description = "Retrieves a list of users. Supports optional filtering and pagination."
+            description = """
+                Retrieves a paginated list of users.
+
+                Supports optional filtering by search text, active status,
+                department, and role.
+
+                Pagination query parameters:
+                - page: zero-based page index
+                - size: page size
+                - sort: field,direction (for example: username,asc)
+                """
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Users retrieved successfully"),
@@ -80,10 +92,37 @@ public class UserController {
             @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content)
     })
     public ResponseEntity<UserListResponse> getUsers(
-            Pageable pageable,
+            @ParameterObject Pageable pageable,
+
+            @Parameter(
+                    description = "Free-text search across username, full name, and email",
+                    example = "smith"
+            )
+            @RequestParam(required = false) String search,
+
+            @Parameter(
+                    description = "Filter by active status",
+                    example = "true"
+            )
+            @RequestParam(required = false) Boolean active,
+
+            @Parameter(
+                    description = "Filter by department id",
+                    example = "3"
+            )
+            @RequestParam(required = false) Long departmentId,
+
+            @Parameter(
+                    description = "Filter by role",
+                    example = "ADMIN"
+            )
+            @RequestParam(required = false) Role role,
+
             @Parameter(hidden = true) @CurrentActorId Long actorId
     ) {
-        return ResponseEntity.ok(userService.getUsers(pageable, actorId));
+        return ResponseEntity.ok(
+                userService.getUsers(pageable, search, active, departmentId, role, actorId)
+        );
     }
 
     /**

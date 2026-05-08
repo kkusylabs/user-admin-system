@@ -87,6 +87,7 @@ class UserControllerIntegrationTest {
 
     @Test
     void getUsersReturnsPagedUsersForAuthenticatedAdmin() throws Exception {
+
         mockMvc.perform(get("/api/users")
                         .param("page", "0")
                         .param("size", "10")
@@ -265,5 +266,79 @@ class UserControllerIntegrationTest {
         user.setDepartment(department);
         user.setActive(active);
         return user;
+    }
+
+    @Test
+    void getUsersFiltersByActiveStatus() throws Exception {
+        User inactiveUser = userRepository.save(user(
+                "inactiveuser",
+                "inactive@example.com",
+                "Inactive User",
+                Role.USER,
+                sales,
+                false
+        ));
+
+        mockMvc.perform(get("/api/users")
+                        .param("active", "false")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .header("Authorization", bearerToken(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.users.content", hasSize(1)))
+                .andExpect(jsonPath("$.users.totalElements").value(1))
+                .andExpect(jsonPath("$.users.content[0].user.id").value(inactiveUser.getId()))
+                .andExpect(jsonPath("$.users.content[0].user.username").value("inactiveuser"));
+    }
+
+    @Test
+    void getUsersFiltersByDepartmentId() throws Exception {
+        User engineeringUser = userRepository.save(user(
+                "engineer",
+                "engineer@example.com",
+                "Engineering User",
+                Role.USER,
+                engineering,
+                true
+        ));
+
+        mockMvc.perform(get("/api/users")
+                        .param("departmentId", engineering.getId().toString())
+                        .param("page", "0")
+                        .param("size", "10")
+                        .header("Authorization", bearerToken(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.users.content", hasSize(1)))
+                .andExpect(jsonPath("$.users.totalElements").value(1))
+                .andExpect(jsonPath("$.users.content[0].user.id").value(engineeringUser.getId()))
+                .andExpect(jsonPath("$.users.content[0].user.username").value("engineer"));
+    }
+
+    @Test
+    void getUsersFiltersBySearchString() throws Exception {
+        mockMvc.perform(get("/api/users")
+                        .param("search", "sales")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .header("Authorization", bearerToken(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.users.content", hasSize(1)))
+                .andExpect(jsonPath("$.users.totalElements").value(1))
+                .andExpect(jsonPath("$.users.content[0].user.id").value(manager.getId()))
+                .andExpect(jsonPath("$.users.content[0].user.username").value("manager"));
+    }
+
+    @Test
+    void getUsersFiltersByRole() throws Exception {
+        mockMvc.perform(get("/api/users")
+                        .param("role", "MANAGER")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .header("Authorization", bearerToken(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.users.content", hasSize(1)))
+                .andExpect(jsonPath("$.users.totalElements").value(1))
+                .andExpect(jsonPath("$.users.content[0].user.id").value(manager.getId()))
+                .andExpect(jsonPath("$.users.content[0].user.role").value("MANAGER"));
     }
 }

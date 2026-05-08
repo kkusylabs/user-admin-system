@@ -4,15 +4,17 @@ import io.github.kkusylabs.useradmin.backend.models.Role;
 import io.github.kkusylabs.useradmin.backend.models.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.Optional;
 
 /**
  * Repository for {@link User} persistence and lookups.
  */
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
 
     /**
      * Finds a user by username.
@@ -27,6 +29,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     @EntityGraph(attributePaths = "department")
     Page<User> findAll(Pageable pageable);
+
+    /**
+     * Returns a filtered page of users with their department eagerly loaded.
+     */
+    @EntityGraph(attributePaths = "department")
+    Page<User> findAll(Specification<User> spec, Pageable pageable);
 
     /**
      * Checks if a user exists with the given username.

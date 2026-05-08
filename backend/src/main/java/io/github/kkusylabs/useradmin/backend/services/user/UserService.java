@@ -8,12 +8,15 @@ import io.github.kkusylabs.useradmin.backend.exceptions.user.EmailAlreadyExistsE
 import io.github.kkusylabs.useradmin.backend.exceptions.user.UserNotFoundException;
 import io.github.kkusylabs.useradmin.backend.exceptions.user.UsernameAlreadyExistsException;
 import io.github.kkusylabs.useradmin.backend.models.Department;
+import io.github.kkusylabs.useradmin.backend.models.Role;
 import io.github.kkusylabs.useradmin.backend.models.User;
 import io.github.kkusylabs.useradmin.backend.repositories.DepartmentRepository;
 import io.github.kkusylabs.useradmin.backend.repositories.UserRepository;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -111,14 +114,35 @@ public class UserService {
      * @return a paged response of users
      */
     @Transactional(readOnly = true)
-    public UserListResponse getUsers(Pageable pageable, Long actorId) {
+    public UserListResponse getUsers(
+            Pageable pageable,
+            String search,
+            Boolean active,
+            Long departmentId,
+            Role role,
+            Long actorId
+    ) {
         User actor = getRequiredActor(actorId);
-        Page<UserListItemResponse> page = userRepository.findAll(pageable)
+
+        Pageable effectivePageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                pageable.getSort().isSorted()
+                        ? pageable.getSort()
+                        : Sort.by("username").ascending()
+        );
+
+        Page<UserListItemResponse> page = userRepository
+                .findAll(
+                        UserSpecifications.filter(search, active, departmentId, role),
+                        effectivePageable
+                )
                 .map(targetUser -> toUserListItemResponse(targetUser, actor));
 
         return new UserListResponse(
                 PagedResponse.from(page),
-                userAuthorizationService.canCreate(actor));
+                userAuthorizationService.canCreate(actor)
+        );
     }
 
     /**
