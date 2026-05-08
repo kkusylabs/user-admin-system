@@ -14,4 +14,8 @@ public class LoginApiClient {
 	public LoginResponse login(String username, String password) {
 		return restClient.post("/auth/login", new LoginRequest(username, password), LoginResponse.class);
 	}
+	
+	public MeResponse me() {
+		return restClient.get("/auth/me", MeResponse.class);
+	}
 }
