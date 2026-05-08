@@ -1,4 +1,4 @@
-package io.github.kkusylabs.useradmin.client.ui.user;
+package io.github.kkusylabs.useradmin.client.ui.model.user;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

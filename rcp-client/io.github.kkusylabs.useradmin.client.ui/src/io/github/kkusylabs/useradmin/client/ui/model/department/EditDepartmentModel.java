@@ -1,4 +1,4 @@
-package io.github.kkusylabs.useradmin.client.ui.department;
+package io.github.kkusylabs.useradmin.client.ui.model.department;
 
 //	DepartmentListItemResponse response = departmentApiClient.getDepartmentById(departmentId);
 //	
