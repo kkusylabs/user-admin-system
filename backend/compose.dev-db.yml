@@ -1,15 +1,8 @@
-# Development database only.
+# Local development database.
+# Starts only Postgres for running the Spring Boot app from IntelliJ with the "dev" profile.
 #
-# Use this when running the Spring Boot app from IntelliJ with the "dev" profile:
+# Run:
 #   docker compose -f compose.dev-db.yml up -d
-#
-# Starts:
-# - Persistent Postgres database only
-#
-# The app does not run in Docker for this workflow. IntelliJ connects to:
-#   jdbc:postgresql://localhost:5432/user_admin_system
-#
-# This database uses a named volume so local development data survives restarts.
 
 services:
   db:

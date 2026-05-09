@@ -1,14 +1,8 @@
-# Client-test stack.
+# Backend fixture for Eclipse RCP client integration tests.
+# Starts the app with the "client-test" profile and a disposable seeded Postgres DB.
 #
-# Use this for testing client integrations against a small, predictable dataset:
+# Run:
 #   docker compose -f compose.client-test.yml up --build
-#
-# Starts:
-# - Spring Boot app with the "client-test" profile
-# - Disposable Postgres database with deterministic client-test seed data
-#
-# The client-test profile uses ddl-auto=create, so the database schema is
-# recreated when the app starts. Do not use this with data you want to keep.
 
 services:
   app:
