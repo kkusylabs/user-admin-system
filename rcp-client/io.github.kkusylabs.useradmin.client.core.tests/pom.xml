@@ -27,7 +27,7 @@
 					<providerHint>junit5</providerHint>
 
 					<!-- SWTBot/UI tests -->
-					<useUIHarness>true</useUIHarness>
+					<useUIHarness>false</useUIHarness>
 					<useUIThread>false</useUIThread>
 
 					<!-- Optional -->
