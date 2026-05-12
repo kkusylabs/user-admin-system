@@ -19,6 +19,11 @@
 				name="lifeCycleURI"
 				value="bundleclass://io.github.kkusylabs.useradmin.client.ui/io.github.kkusylabs.useradmin.client.ui.lifecycle.E4LifeCycle">
 			</property>
+
+			<property
+				name="applicationCSS"
+				value="platform:/plugin/io.github.kkusylabs.useradmin.client.ui/css/default.css" />
+
 		</product>
 	</extension>
 

@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Client
-Bundle-SymbolicName: io.github.kkusylabs.useradmin.client.ui
+Bundle-SymbolicName: io.github.kkusylabs.useradmin.client.ui;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Require-Bundle: org.eclipse.swt,
  org.eclipse.jface,
@@ -13,8 +13,10 @@ Require-Bundle: org.eclipse.swt,
  org.eclipse.e4.ui.workbench,
  org.eclipse.e4.ui.workbench.swt,
  io.github.kkusylabs.useradmin.client.core,
- com.fasterxml.jackson.core.jackson-annotations;bundle-version="2.21.0",
- com.fasterxml.jackson.core.jackson-core;bundle-version="2.21.1",
- com.fasterxml.jackson.core.jackson-databind;bundle-version="2.21.1"
+ com.fasterxml.jackson.core.jackson-annotations,
+ com.fasterxml.jackson.core.jackson-core,
+ com.fasterxml.jackson.core.jackson-databind,
+ org.eclipse.e4.ui.css.swt,
+ org.eclipse.e4.ui.css.swt.theme
 Automatic-Module-Name: io.github.kkusylabs.useradmin.client
 Bundle-RequiredExecutionEnvironment: JavaSE-21
