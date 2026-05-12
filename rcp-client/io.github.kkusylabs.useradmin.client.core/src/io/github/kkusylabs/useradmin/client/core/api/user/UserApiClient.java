@@ -44,8 +44,8 @@ public class UserApiClient {
 		return restClient.get("/users", queryParams, UserListResponse.class);
 	}
 
-	public UserDetailResponse getUserById(long userId) {
-		return restClient.get("/users/" + userId, UserDetailResponse.class);
+	public UserListItemResponse getUserById(long userId) {
+		return restClient.get("/users/" + userId, UserListItemResponse.class);
 	}
 
 	public CreateUserCapabilities getCreateCapabilities() {
@@ -57,9 +57,9 @@ public class UserApiClient {
 		return restClient.post("/users", request, UserDetailResponse.class);
 	}
 
-	public UserDetailResponse updateUser(long userId, Map<String, Object> patch) {
+	public UserListItemResponse updateUser(long userId, Map<String, Object> patch) {
 		Objects.requireNonNull(patch, "patch must not be null");
-		return restClient.put("/users/" + userId, patch, UserDetailResponse.class);
+		return restClient.patch("/users/" + userId, patch, UserListItemResponse.class);
 	}
 
 	public void deleteUser(long userId) {

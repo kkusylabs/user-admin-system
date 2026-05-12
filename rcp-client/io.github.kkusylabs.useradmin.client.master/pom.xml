@@ -69,4 +69,15 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>tests</id>
+			<modules>
+				<module>../integration-env-start</module>
+				<module>../io.github.kkusylabs.useradmin.client.core.tests</module>
+				<module>../integration-env-stop</module>
+			</modules>
+		</profile>
+	</profiles>
 </project>

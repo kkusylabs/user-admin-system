@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Test
+Bundle-SymbolicName: io.github.kkusylabs.useradmin.client.core.tests
+Bundle-Version: 1.0.0.qualifier
+Require-Bundle: junit-jupiter-api,
+ io.github.kkusylabs.useradmin.client.core,
+ com.fasterxml.jackson.core.jackson-databind,
+ org.opentest4j
+Automatic-Module-Name: io.github.kkusylabs.useradmin.client.core.test
+Bundle-RequiredExecutionEnvironment: JavaSE-21

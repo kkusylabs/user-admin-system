@@ -9,7 +9,7 @@ import org.eclipse.e4.ui.workbench.lifecycle.PostContextCreate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.github.kkusylabs.useradmin.client.core.api.RestClient;
-import io.github.kkusylabs.useradmin.client.core.api.auth.LoginApiClient;
+import io.github.kkusylabs.useradmin.client.core.api.auth.AuthApiClient;
 import io.github.kkusylabs.useradmin.client.core.api.department.DepartmentApiClient;
 import io.github.kkusylabs.useradmin.client.core.api.user.UserApiClient;
 import io.github.kkusylabs.useradmin.client.core.auth.SessionAuthTokenProvider;
@@ -36,13 +36,13 @@ public class E4LifeCycle {
 		RestClient restClient = new RestClient(httpClient, objectMapper, appConfig.getBaseUrl(), Duration.ofSeconds(20),
 				tokenProvider);
 
-		LoginApiClient loginApiClient = new LoginApiClient(restClient);
+		AuthApiClient loginApiClient = new AuthApiClient(restClient);
 		UserApiClient userApiClient = new UserApiClient(restClient);
 		DepartmentApiClient departmentApiClient = new DepartmentApiClient(restClient);
 
 		context.set(AppConfig.class, appConfig);
 		context.set(SessionTokenStore.class, tokenStore);
-		context.set(LoginApiClient.class, loginApiClient);
+		context.set(AuthApiClient.class, loginApiClient);
 		context.set(UserApiClient.class, userApiClient);
 		context.set(DepartmentApiClient.class, departmentApiClient);
 	}

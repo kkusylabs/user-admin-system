@@ -187,14 +187,14 @@ From the **backend module**:
 cd backend
 ```
 
-1. Start PostgreSQL
+1. Start PostgreSQL:
    ```bash
-   docker compose up -d postgres
+   docker compose up -d db 
    ```
 
 2. Start the application:
    ```bash
-   ./mvnw spring-boot:run
+   ./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
    ```
 ---
 ### Run full stack with Docker Compose

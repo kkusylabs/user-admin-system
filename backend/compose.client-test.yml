@@ -7,9 +7,9 @@
 services:
   app:
     build: .
-    container_name: user-admin-client-test-app
+    # container_name: user-admin-client-test-app
     ports:
-      - "8080:8080"
+      - "8081:8080"
     environment:
       SPRING_PROFILES_ACTIVE: client-test
       DB_URL: jdbc:postgresql://db:5432/user_admin_client_test
@@ -21,10 +21,10 @@ services:
 
   db:
     image: postgres:16
-    container_name: user-admin-client-test-db
+    # container_name: user-admin-client-test-db
     environment:
       POSTGRES_DB: user_admin_client_test
       POSTGRES_USER: user_admin_app
       POSTGRES_PASSWORD: password123
     ports:
-      - "5432:5432"
+      - "5432"

@@ -4,10 +4,10 @@ import java.util.Objects;
 
 import io.github.kkusylabs.useradmin.client.core.api.RestClient;
 
-public class LoginApiClient {
+public class AuthApiClient {
 	private final RestClient restClient;
 
-	public LoginApiClient(RestClient restClient) {
+	public AuthApiClient(RestClient restClient) {
 		this.restClient = Objects.requireNonNull(restClient);
 	}
 

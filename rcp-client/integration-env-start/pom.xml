@@ -1,0 +1,52 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>io.github.kkusylabs.useradmin</groupId>
+	<artifactId>integration-env-start</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<name>integration-env-start</name>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>3.6.3</version>
+
+				<executions>
+					<execution>
+						<id>start-backend</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>docker</executable>
+							<arguments>
+								<argument>compose</argument>
+								<argument>-f</argument>
+								<argument>../../backend/compose.client-test.yml</argument>
+								<argument>up</argument>
+								<argument>-d</argument>
+								<argument>--build</argument>
+							</arguments>
+						</configuration>
+					</execution>
+
+					<execution>
+						<id>wait-for-backend</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>java</goal>
+						</goals>
+						<configuration>
+							<mainClass>
+								io.github.kkusylabs.useradmin.testenv.WaitForBackend</mainClass>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>
