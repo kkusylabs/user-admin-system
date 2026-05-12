@@ -3,6 +3,8 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Client
 Bundle-SymbolicName: io.github.kkusylabs.useradmin.client.ui;singleton:=true
 Bundle-Version: 1.0.0.qualifier
+Import-Package: jakarta.annotation;version="2.1.1",
+ jakarta.inject;version="[2.0.0,3.0.0)"
 Require-Bundle: org.eclipse.swt,
  org.eclipse.jface,
  org.eclipse.core.runtime,
@@ -17,6 +19,8 @@ Require-Bundle: org.eclipse.swt,
  com.fasterxml.jackson.core.jackson-core,
  com.fasterxml.jackson.core.jackson-databind,
  org.eclipse.e4.ui.css.swt,
- org.eclipse.e4.ui.css.swt.theme
+ org.eclipse.e4.ui.css.swt.theme,
+ org.eclipse.e4.ui.di,
+ org.eclipse.e4.core.services
 Automatic-Module-Name: io.github.kkusylabs.useradmin.client
 Bundle-RequiredExecutionEnvironment: JavaSE-21

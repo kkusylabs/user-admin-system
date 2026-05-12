@@ -1,4 +1,5 @@
 #useradmin-main-partstack {
-    swt-minimize-visible: false;
-    swt-maximize-visible: false;
+	swt-minimize-visible: false;
+	swt-maximize-visible: false;
+	padding: 10px;
 }
