@@ -17,15 +17,15 @@ import java.util.Set;
  * Command-side validation is handled by the service layer.</p>
  *
  * @param canCreate whether the actor is allowed to create a user
- * @param assignableRoles roles the actor may assign to the new user
- * @param assignableDepartments departments the actor may assign to the new user
+ * @param roleOptions roles the actor may assign to the new user
+ * @param departmentOptions departments the actor may assign to the new user
  * @param reason explanation for denial when {@code canCreate} is {@code false}, otherwise {@code null}
  */
 public record CreateUserCapabilities(
 
         boolean canCreate,
-        Set<Role> assignableRoles,
-        List<DepartmentOption> assignableDepartments,
+        Set<Role> roleOptions,
+        List<DepartmentOption> departmentOptions,
         String reason
 
 ) {

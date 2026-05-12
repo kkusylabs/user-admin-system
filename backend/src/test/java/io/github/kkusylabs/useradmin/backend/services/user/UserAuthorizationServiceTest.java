@@ -128,9 +128,9 @@ class UserAuthorizationServiceTest {
             CreateUserCapabilities capabilities = service.getCreateCapabilities(admin);
 
             assertTrue(capabilities.canCreate());
-            assertEquals(Set.of(Role.ADMIN, Role.MANAGER, Role.USER), capabilities.assignableRoles());
+            assertEquals(Set.of(Role.ADMIN, Role.MANAGER, Role.USER), capabilities.roleOptions());
             assertEquals(List.of(engineering.getId(), sales.getId()),
-                    capabilities.assignableDepartments().stream().map(option -> option.id()).toList());
+                    capabilities.departmentOptions().stream().map(option -> option.id()).toList());
         }
 
         @Test
@@ -140,9 +140,9 @@ class UserAuthorizationServiceTest {
             CreateUserCapabilities capabilities = service.getCreateCapabilities(manager);
 
             assertTrue(capabilities.canCreate());
-            assertEquals(Set.of(Role.USER), capabilities.assignableRoles());
+            assertEquals(Set.of(Role.USER), capabilities.roleOptions());
             assertEquals(List.of(sales.getId()),
-                    capabilities.assignableDepartments().stream().map(option -> option.id()).toList());
+                    capabilities.departmentOptions().stream().map(option -> option.id()).toList());
             verifyNoInteractions(departmentRepository);
         }
     }

@@ -48,7 +48,7 @@ public class UserApiClient {
 		return restClient.get("/users/" + userId, UserListItemResponse.class);
 	}
 
-	public CreateUserCapabilities getCreateCapabilities() {
+	public CreateUserCapabilities getCreateUserCapabilities() {
 		return restClient.get("/users/create-capabilities", CreateUserCapabilities.class);
 	}
 

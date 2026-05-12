@@ -7,14 +7,12 @@ import io.github.kkusylabs.useradmin.client.core.api.department.DepartmentOption
 
 public record UpdateUserCapabilities(
 		boolean canUpdate, 
-		boolean canEditFullName, 
-		boolean canEditEmail,
-		boolean canEditPhone, 
-		boolean canEditJobTitle, 
-		boolean canEditActive, 
+		boolean canEditProfile,
+		boolean canEditJobTitle,
+		boolean canEditRole,
 		boolean canEditDepartment,
-		boolean canEditRole, 
-		Set<Role> assignableRoles, 
-		List<DepartmentOption> assignableDepartments, 
+		boolean canEditActive, 
+		Set<Role> roleOptions, 
+		List<DepartmentOption> departmentOptions, 
 		String reason) {
 }

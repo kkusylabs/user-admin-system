@@ -7,7 +7,7 @@ import io.github.kkusylabs.useradmin.client.core.api.department.DepartmentOption
 
 public record CreateUserCapabilities(
 		boolean canCreate, 
-		Set<Role> assignableRoles,
-		List<DepartmentOption> assignableDepartments, 
+		Set<Role> roleOptions,
+		List<DepartmentOption> departmentOptions, 
 		String reason) {
 }

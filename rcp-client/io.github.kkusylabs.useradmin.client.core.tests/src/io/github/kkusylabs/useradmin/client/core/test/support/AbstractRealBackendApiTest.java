@@ -29,8 +29,6 @@ public abstract class AbstractRealBackendApiTest {
 				System.getenv("USERADMIN_API_BASEURL"),
 				"http://localhost:8081/api");
 		
-		System.out.println("baseUrl=" + baseUrl);
-
 		assumeTrue(baseUrl != null && !baseUrl.isBlank(), "Real backend base URL not configured");
 
 		HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();

@@ -133,9 +133,9 @@ class UserControllerIntegrationTest {
                         .header("Authorization", bearerToken(admin)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.canCreate").value(true))
-                .andExpect(jsonPath("$.assignableRoles", containsInAnyOrder("ADMIN", "MANAGER", "USER")))
-                .andExpect(jsonPath("$.assignableDepartments", hasSize(2)))
-                .andExpect(jsonPath("$.assignableDepartments[*].name", containsInAnyOrder("Engineering", "Sales")));
+                .andExpect(jsonPath("$.roleOptions", containsInAnyOrder("ADMIN", "MANAGER", "USER")))
+                .andExpect(jsonPath("$.departmentOptions", hasSize(2)))
+                .andExpect(jsonPath("$.departmentOptions[*].name", containsInAnyOrder("Engineering", "Sales")));
     }
 
     @Test
