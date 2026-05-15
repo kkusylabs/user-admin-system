@@ -7,7 +7,13 @@ public interface UserListActions {
 
 	void deleteUserRequested(UserListItemResponse user);
 
-	void refreshUsersRequested();
-
 	void userSelected(UserListItemResponse user);
+	
+	void firstPageRequested();
+	
+	void previousPageRequested();
+	
+	void nextPageRequested();
+	
+	void lastPageRequested();
 }

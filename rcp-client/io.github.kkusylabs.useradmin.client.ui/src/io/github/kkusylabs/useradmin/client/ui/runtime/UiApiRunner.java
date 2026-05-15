@@ -144,7 +144,7 @@ public final class UiApiRunner {
 
 						// 4. Handle Failure
 						if (error != null) {
-							Throwable cause = apiErrorHandler.unwrap(error);
+							Throwable cause = ApiErrorHandler.unwrap(error);
 
 							if (customErrorHandler != null && customErrorHandler.handle(cause)) {
 								return; // Handled by caller
