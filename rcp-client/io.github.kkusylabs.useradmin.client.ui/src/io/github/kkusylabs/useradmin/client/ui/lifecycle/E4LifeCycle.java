@@ -5,6 +5,7 @@ import java.time.Duration;
 
 import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.eclipse.e4.core.services.events.IEventBroker;
+import org.eclipse.e4.ui.di.UISynchronize;
 import org.eclipse.e4.ui.workbench.lifecycle.PostContextCreate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,7 +18,9 @@ import io.github.kkusylabs.useradmin.client.core.auth.SessionAuthTokenProvider;
 import io.github.kkusylabs.useradmin.client.core.auth.SessionTokenStore;
 import io.github.kkusylabs.useradmin.client.ui.config.AppConfig;
 import io.github.kkusylabs.useradmin.client.ui.dialogs.LoginService;
+import io.github.kkusylabs.useradmin.client.ui.runtime.ApiErrorHandler;
 import io.github.kkusylabs.useradmin.client.ui.runtime.ApiExecutor;
+import io.github.kkusylabs.useradmin.client.ui.runtime.UiApiRunner;
 import jakarta.annotation.PreDestroy;
 
 public class E4LifeCycle {
@@ -25,7 +28,10 @@ public class E4LifeCycle {
 	}
 
 	@PostContextCreate
-	public void postContextCreate(IEclipseContext context, IEventBroker eventBroker) {
+	public void postContextCreate(
+			IEclipseContext context, 
+			IEventBroker eventBroker,
+			UISynchronize uiSync) {
 		AppConfig appConfig = new AppConfig();
 
 		HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
@@ -41,8 +47,10 @@ public class E4LifeCycle {
 		AuthApiClient loginApiClient = new AuthApiClient(restClient);
 		UserApiClient userApiClient = new UserApiClient(restClient);
 		DepartmentApiClient departmentApiClient = new DepartmentApiClient(restClient);
-
+		
+		ApiErrorHandler apiErrorHandler = new ApiErrorHandler(eventBroker);
 		ApiExecutor apiExecutor = new ApiExecutor();
+		UiApiRunner apiRunner = new UiApiRunner(apiExecutor, uiSync, apiErrorHandler);
 		
 		LoginService loginService = new LoginService(loginApiClient, tokenStore, eventBroker, apiExecutor);
 		
@@ -52,6 +60,8 @@ public class E4LifeCycle {
 		context.set(UserApiClient.class, userApiClient);
 		context.set(DepartmentApiClient.class, departmentApiClient);
 		context.set(ApiExecutor.class, apiExecutor);
+		context.set(ApiErrorHandler.class, apiErrorHandler);
+		context.set(UiApiRunner.class, apiRunner);
 		context.set(LoginService.class, loginService);
 	}
 	

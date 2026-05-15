@@ -1,8 +1,5 @@
 package io.github.kkusylabs.useradmin.client.ui.dialogs;
 
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
-
 import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.swt.SWT;
@@ -15,6 +12,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
 import io.github.kkusylabs.useradmin.client.core.api.UnauthorizedException;
+import io.github.kkusylabs.useradmin.client.ui.runtime.ApiErrorHandler;
 
 public class LoginDialog extends TitleAreaDialog {
 
@@ -116,7 +114,7 @@ public class LoginDialog extends TitleAreaDialog {
 	}
 	
 	private String toLoginErrorMessage(Throwable error) {
-		Throwable cause = unwrap(error);
+		Throwable cause = ApiErrorHandler.unwrap(error);
 
 		if (cause instanceof UnauthorizedException) {
 			return "Invalid username or password.";
@@ -125,24 +123,13 @@ public class LoginDialog extends TitleAreaDialog {
 		return "Login failed.";
 	}
 
-	private Throwable unwrap(Throwable error) {
-		if (error instanceof CompletionException && error.getCause() != null) {
-			return error.getCause();
-		}
-
-		if (error instanceof ExecutionException && error.getCause() != null) {
-			return error.getCause();
-		}
-
-		return error;
-	}
 	
 	private boolean shouldClearPassword(Throwable error) {
-		Throwable cause = unwrap(error);
+		Throwable cause = ApiErrorHandler.unwrap(error);
 		return cause instanceof UnauthorizedException;
 	}
 	
 	private void superOkPressed() {
-	    super.okPressed();
+		super.okPressed();
 	}
 }
