@@ -363,7 +363,7 @@ public class UserDetailsComposite extends Composite {
 		roleCombo.removeAll();
 
 		for (Role role : roles) {
-			roleCombo.add(role.name());
+			roleCombo.add(role.getDisplayName());
 		}
 	}
 	
@@ -383,7 +383,7 @@ public class UserDetailsComposite extends Composite {
 			return;
 		}
 
-		String roleName = role.name();
+		String roleName = role.getDisplayName();
 
 		for (int i = 0; i < roleCombo.getItemCount(); i++) {
 			if (roleName.equals(roleCombo.getItem(i))) {
@@ -418,7 +418,7 @@ public class UserDetailsComposite extends Composite {
 			return null;
 		}
 
-		return Role.valueOf(roleCombo.getItem(index));
+		return Role.fromDisplayName(roleCombo.getItem(index));
 	}
 	
 	private Long getSelectedDepartmentId() {

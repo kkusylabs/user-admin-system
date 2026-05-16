@@ -105,7 +105,7 @@ public class UserListComposite extends Composite {
 		createColumn("Full Name", 180, item -> item.user().fullName());
 
 		createColumn("Role", 100,
-				item -> item.user().role() == null ? "" : item.user().role().name());
+				item -> item.user().role() == null ? "" : item.user().role().getDisplayName());
 
 		createColumn("Department", 160,
 				item -> item.user().department() == null
