@@ -116,7 +116,7 @@ public class UserPart {
 
 			@Override
 			public void userSelected(UserListItemResponse user) {
-				handleUserSelection(user);
+				selectUser(user);
 			}
 			
 
@@ -165,7 +165,7 @@ public class UserPart {
 
 			@Override
 			public void cancelRequested() {
-				handleCancelUserRequested();
+				restoreSelectedUserView();
 			}
 		});		
 	}
@@ -316,7 +316,7 @@ public class UserPart {
 				.execute();
 	}
 	
-	private void handleUserSelection(UserListItemResponse user) {
+	private void selectUser(UserListItemResponse user) {
 		if (suppressSelectionEvents) {
 			return;
 		}
@@ -451,7 +451,7 @@ public class UserPart {
 				.execute();
 	}
 	
-	private void handleCancelUserRequested() {
+	private void restoreSelectedUserView() {
 
 		if (selectedUser != null) {
 			userDetailsComposite.showViewMode(selectedUser);
