@@ -52,9 +52,9 @@ public class UserApiClient {
 		return restClient.get("/users/create-capabilities", CreateUserCapabilities.class);
 	}
 
-	public UserDetailResponse createUser(CreateUserRequest request) {
+	public UserListItemResponse createUser(CreateUserRequest request) {
 		Objects.requireNonNull(request, "request must not be null");
-		return restClient.post("/users", request, UserDetailResponse.class);
+		return restClient.post("/users", request, UserListItemResponse.class);
 	}
 
 	public UserListItemResponse updateUser(long userId, Map<String, Object> patch) {
