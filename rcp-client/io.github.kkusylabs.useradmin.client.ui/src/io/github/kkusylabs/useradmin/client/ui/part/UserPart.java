@@ -139,6 +139,10 @@ public class UserPart {
 			public void lastPageRequested() {
 				handleLastPageRequested();
 			}
+			
+			public void pageSizeChanged(int pageSize) {
+				handlePageSizeChanged(pageSize);
+			}
 		});		
 	}
 	
@@ -379,6 +383,12 @@ public class UserPart {
 
 		currentPage = Math.max(currentResponse.users().totalPages() - 1, 0);
 
+		loadUsers();
+	}
+	
+	private void handlePageSizeChanged(int pageSize) {
+		this.pageSize = pageSize;
+		this.currentPage = 0;
 		loadUsers();
 	}
 	

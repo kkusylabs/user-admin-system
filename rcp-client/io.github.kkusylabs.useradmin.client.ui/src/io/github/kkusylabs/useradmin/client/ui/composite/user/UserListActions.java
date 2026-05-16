@@ -16,4 +16,6 @@ public interface UserListActions {
 	void nextPageRequested();
 	
 	void lastPageRequested();
+	
+	void pageSizeChanged(int pageSize);
 }

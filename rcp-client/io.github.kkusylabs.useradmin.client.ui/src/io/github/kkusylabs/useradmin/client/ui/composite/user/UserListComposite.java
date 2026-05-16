@@ -12,6 +12,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.TableColumn;
@@ -43,6 +44,8 @@ public class UserListComposite extends Composite {
 	private Button lastButton;
 	
 	private UserListResponse currentResponse;
+	
+	private Combo pageSizeCombo;
 	
 	public UserListComposite(Composite parent, int style) {
 		super(parent, style);
@@ -141,32 +144,61 @@ public class UserListComposite extends Composite {
 		pagingBar.setLayoutData(
 				new GridData(SWT.FILL, SWT.BOTTOM, true, false));
 
+		GridLayout layout = new GridLayout(3, false);
+		layout.marginWidth = 0;
+		layout.marginHeight = 0;
+		layout.horizontalSpacing = 8;
+
+		pagingBar.setLayout(layout);
+
+		createNavigationControls(pagingBar);
+
+		Label spacer = new Label(pagingBar, SWT.NONE);
+		spacer.setLayoutData(
+				new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+		createPageSizeControls(pagingBar);
+	}
+	
+	private void createNavigationControls(Composite parent) {
+		Composite nav = new Composite(parent, SWT.NONE);
+
 		GridLayout layout = new GridLayout(5, false);
 		layout.marginWidth = 0;
 		layout.marginHeight = 0;
 		layout.horizontalSpacing = 6;
 
-		pagingBar.setLayout(layout);
+		nav.setLayout(layout);
 
-		firstButton = new Button(pagingBar, SWT.PUSH);
+		firstButton = new Button(nav, SWT.PUSH);
 		firstButton.setText("<<");
 
-		previousButton = new Button(pagingBar, SWT.PUSH);
+		previousButton = new Button(nav, SWT.PUSH);
 		previousButton.setText("<");
 
-		pageLabel = new Label(pagingBar, SWT.CENTER);
+		pageLabel = new Label(nav, SWT.CENTER);
+		pageLabel.setText("Page 999 of 999");
+		
+		GridData pageLabelData =
+				new GridData(SWT.CENTER, SWT.CENTER, false, false);
 
-		pageLabel.setLayoutData(
-				new GridData(SWT.CENTER, SWT.CENTER, true, false));
+		pageLabelData.widthHint =
+				pageLabel.computeSize(SWT.DEFAULT, SWT.DEFAULT).x;
+
+		pageLabel.setLayoutData(pageLabelData);
 
 		pageLabel.setText("Page 0 of 0");
 
-		nextButton = new Button(pagingBar, SWT.PUSH);
+		nextButton = new Button(nav, SWT.PUSH);
 		nextButton.setText(">");
 
-		lastButton = new Button(pagingBar, SWT.PUSH);
+		lastButton = new Button(nav, SWT.PUSH);
 		lastButton.setText(">>");
 
+		configurePagingButtonWidths();
+	}
+	
+	private void configurePagingButtonWidths() {
 		int buttonWidth = Math.max(
 				Math.max(
 						firstButton.computeSize(SWT.DEFAULT, SWT.DEFAULT).x,
@@ -177,17 +209,41 @@ public class UserListComposite extends Composite {
 
 		buttonWidth += 10;
 
-		firstButton.setLayoutData(
-				new GridData(buttonWidth, SWT.DEFAULT));
+		GridData firstData = new GridData(buttonWidth, SWT.DEFAULT);
+		GridData previousData = new GridData(buttonWidth, SWT.DEFAULT);
+		GridData nextData = new GridData(buttonWidth, SWT.DEFAULT);
+		GridData lastData = new GridData(buttonWidth, SWT.DEFAULT);
 
-		previousButton.setLayoutData(
-				new GridData(buttonWidth, SWT.DEFAULT));
+		firstButton.setLayoutData(firstData);
+		previousButton.setLayoutData(previousData);
+		nextButton.setLayoutData(nextData);
+		lastButton.setLayoutData(lastData);
+	}
+	
+	private void createPageSizeControls(Composite parent) {
+		Composite sizeArea = new Composite(parent, SWT.NONE);
 
-		nextButton.setLayoutData(
-				new GridData(buttonWidth, SWT.DEFAULT));
+		GridLayout layout = new GridLayout(2, false);
+		layout.marginWidth = 0;
+		layout.marginHeight = 0;
+		layout.horizontalSpacing = 4;
 
-		lastButton.setLayoutData(
-				new GridData(buttonWidth, SWT.DEFAULT));
+		sizeArea.setLayout(layout);
+
+		new Label(sizeArea, SWT.NONE).setText("Page size:");
+
+		pageSizeCombo = new Combo(sizeArea, SWT.READ_ONLY);
+		pageSizeCombo.setItems("10", "25", "50", "100");
+		pageSizeCombo.select(1);
+		pageSizeCombo.addListener(SWT.Selection, e -> {
+			if (actions != null) {
+				actions.pageSizeChanged(getSelectedPageSize());
+			}
+		});
+	}
+	
+	private int getSelectedPageSize() {
+		return Integer.parseInt(pageSizeCombo.getText());
 	}
 		
 	public void setActions(UserListActions actions) {
@@ -290,6 +346,7 @@ public class UserListComposite extends Composite {
 		int totalPages = Math.max(page.totalPages(), 1);
 
 		pageLabel.setText("Page " + currentPage + " of " + totalPages);
+		pageLabel.getParent().layout();
 
 		firstButton.setEnabled(!page.first());
 		previousButton.setEnabled(!page.first());
