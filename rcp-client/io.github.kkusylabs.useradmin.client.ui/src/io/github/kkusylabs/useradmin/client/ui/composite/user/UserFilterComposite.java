@@ -50,10 +50,8 @@ public class UserFilterComposite extends Composite {
 		layout.horizontalSpacing = 8;
 		setLayout(layout);
 
-		Label searchLabel = new Label(this, SWT.NONE);
-		searchLabel.setText("Search:");
-
 		searchText = new Text(this, SWT.BORDER | SWT.SEARCH | SWT.ICON_CANCEL);
+		searchText.setMessage("Search users...");
 		GridData searchData = new GridData(SWT.FILL, SWT.CENTER, true, false);
 		searchData.widthHint = 180;
 		searchText.setLayoutData(searchData);
