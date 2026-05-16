@@ -3,11 +3,11 @@
 #
 # Run:
 #   docker compose -f compose.dev-db.yml up -d
+name: user-admin-dev-db
 
 services:
   db:
     image: postgres:16
-    container_name: user-admin-dev-db
     environment:
       POSTGRES_DB: user_admin_system
       POSTGRES_USER: user_admin_app
