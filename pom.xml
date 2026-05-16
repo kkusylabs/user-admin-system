@@ -11,6 +11,6 @@
 
     <modules>
         <module>backend</module>
-	<module>rpc-client</module>
+	<module>rcp-client/io.github.kkusylabs.useradmin.client.master</module>
     </modules>
 </project>
