@@ -23,6 +23,7 @@ import io.github.kkusylabs.useradmin.client.core.api.user.UserListFilter;
 import io.github.kkusylabs.useradmin.client.core.api.user.UserListItemResponse;
 import io.github.kkusylabs.useradmin.client.core.api.user.UserListResponse;
 import io.github.kkusylabs.useradmin.client.core.api.user.UserPatch;
+import io.github.kkusylabs.useradmin.client.core.auth.SessionTokenStore;
 import io.github.kkusylabs.useradmin.client.ui.composite.user.UserDetailsActions;
 import io.github.kkusylabs.useradmin.client.ui.composite.user.UserDetailsComposite;
 import io.github.kkusylabs.useradmin.client.ui.composite.user.UserFilterActions;
@@ -60,6 +61,9 @@ public class UserPart {
 	private UserListItemResponse selectedUser;
 	
 	private boolean suppressSelectionEvents;
+	
+	@Inject
+	private SessionTokenStore tokenStore;
 
 	@PostConstruct
 	public void createControls(Composite parent) {	
@@ -77,6 +81,10 @@ public class UserPart {
 		sash.setWeights(new int[] { 55, 45 });
 
 		wireEvents();
+		
+		if (tokenStore.hasToken()) {
+			loadUsers();
+		}
 	}
 	
 	private void wireEvents() {
