@@ -1,5 +1,6 @@
 package io.github.kkusylabs.useradmin.client.ui.composite.user;
 
+import java.util.Comparator;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
@@ -210,7 +211,8 @@ public class UserDetailsComposite extends Composite {
 		
 		setUserFields(currentUser);
 
-		setRoleOptions(updateCapabilities.roleOptions().stream().toList());
+		setRoleOptions(updateCapabilities.roleOptions().stream()
+				.sorted(Comparator.comparingInt(Enum::ordinal)).toList());
 		setDepartmentOptions(updateCapabilities.departmentOptions());
 
 		selectRole(currentUser.role());
@@ -232,7 +234,8 @@ public class UserDetailsComposite extends Composite {
 
 		setPasswordVisible(true);
 		
-		setRoleOptions(capabilities.roleOptions().stream().toList());
+		setRoleOptions(capabilities.roleOptions().stream()
+				.sorted(Comparator.comparingInt(Enum::ordinal)).toList());
 		setDepartmentOptions(capabilities.departmentOptions());
 
 		if (roleCombo.getItemCount() > 0) {

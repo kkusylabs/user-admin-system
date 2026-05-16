@@ -2,9 +2,9 @@ package io.github.kkusylabs.useradmin.client.core.api.user;
 
 public enum Role {
 
-	ADMIN("Admin"),
+	USER("User"),
 	MANAGER("Manager"),
-	USER("User");
+	ADMIN("Admin");
 
 	private final String displayName;
 
