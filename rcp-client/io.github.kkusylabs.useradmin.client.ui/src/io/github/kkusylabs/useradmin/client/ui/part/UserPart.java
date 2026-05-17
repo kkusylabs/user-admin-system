@@ -419,6 +419,9 @@ public class UserPart {
 		apiRunner.task(() -> userApiClient.createUser(request))
 				.onControl(userDetailsComposite)
 				.onSuccess(created -> {
+					selectedUser = created;
+					userDetailsComposite.showViewMode(created);
+					
 					loadUsers();
 					MessageDialog.openInformation(
 							userDetailsComposite.getShell(),
