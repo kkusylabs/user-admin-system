@@ -2,6 +2,7 @@ package io.github.kkusylabs.useradmin.client.ui.composite.user;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -336,27 +337,66 @@ public class UserDetailsComposite extends Composite {
 		if (updateCapabilities == null) {
 			return patch;
 		}
-
+		
 		if (updateCapabilities.canEditProfile()) {
-			patch.fullName(TextUtil.trimToNull(fullNameText.getText()));
-			patch.email(TextUtil.trimToNull(emailText.getText()));
-			patch.phone(TextUtil.trimToNull(phoneText.getText()));
+
+			String fullName = TextUtil.trimToNull(fullNameText.getText());
+
+			if (!Objects.equals(fullName, currentUser.fullName())) {
+				patch.fullName(fullName);
+			}
+
+			String email = TextUtil.trimToNull(emailText.getText());
+
+			if (!Objects.equals(email, currentUser.email())) {
+				patch.email(email);
+			}
+
+			String phone = TextUtil.trimToNull(phoneText.getText());
+
+			if (!Objects.equals(phone, currentUser.phone())) {
+				patch.phone(phone);
+			}
 		}
 
 		if (updateCapabilities.canEditJobTitle()) {
-			patch.jobTitle(TextUtil.trimToNull(jobTitleText.getText()));
+
+			String jobTitle = TextUtil.trimToNull(jobTitleText.getText());
+
+			if (!Objects.equals(jobTitle, currentUser.jobTitle())) {
+				patch.jobTitle(jobTitle);
+			}
 		}
 
 		if (updateCapabilities.canEditRole()) {
-			patch.role(getSelectedRole());
+
+			Role role = getSelectedRole();
+
+			if (!Objects.equals(role, currentUser.role())) {
+				patch.role(role);
+			}
 		}
 
 		if (updateCapabilities.canEditDepartment()) {
-			patch.departmentId(getSelectedDepartmentId());
+			Long departmentId = getSelectedDepartmentId();
+
+			Long currentDepartmentId =
+					currentUser.department() == null
+							? null
+							: currentUser.department().id();
+
+			if (!Objects.equals(departmentId, currentDepartmentId)) {
+				patch.departmentId(departmentId);
+			}
 		}
 
 		if (updateCapabilities.canEditActive()) {
-			patch.active(activeCheckbox.getSelection());
+
+			boolean active = activeCheckbox.getSelection();
+
+			if (active != currentUser.active()) {
+				patch.active(active);
+			}
 		}
 
 		return patch;
