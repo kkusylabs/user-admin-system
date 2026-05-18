@@ -52,7 +52,7 @@ The system emphasizes:
 
 A short walkthrough of login, user management, filtering, paging, and department management:
 
-[Watch the demo video](https://github.com/kkusylabs/user-admin-system/releases/download/v1.0/demo.mp4)
+[Watch the demo video](https://youtu.be/3me7m_lPNX4)
 
 ## Downloads
 
