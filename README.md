@@ -335,6 +335,14 @@ docker compose -f compose.dev-db.yml up -d
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
+The backend runs at:
+
+http://localhost:8080
+
+The REST API base URL is:
+
+http://localhost:8080/api
+
 This starts the backend directly from source using the dev profile
 
 ## Full Stack Demo Mode
@@ -351,6 +359,12 @@ cd backend
 docker compose up --build
 ```
 
+The backend and API are available at:
+
+```text
+http://localhost:8080
+http://localhost:8080/api
+```
 ## Testing
 
 The project includes:
@@ -434,7 +448,21 @@ password: demo12345
 
 The backend API must be running before logging into the desktop client.
 
-Start the backend first, then launch the client.
+By default, the RCP client connects to:
+```text
+http://localhost:8080/api
+```
+The API base URL can be overridden using either a Java system property or an environment variable.
+
+### Java System Property
+
+```bash
+-Duseradmin.api.baseUrl=http://localhost:8080/api
+```
+### Environment Variable
+```bash
+USERADMIN_API_BASEURL=http://localhost:8080/api
+```
 
 # Using Swagger UI
 
