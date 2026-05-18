@@ -64,7 +64,7 @@ public class AppStartupAddon {
 	public void onAuthExpired(@UIEventTopic(AppTopics.AUTH_EXPIRED) Object ignored) {
 
 		uiSync.asyncExec(() -> {
-			tokenStore.setToken(null);
+			tokenStore.clear();
 			showLoginWhenShellExists();
 		});
 	}

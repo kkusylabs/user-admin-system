@@ -72,6 +72,7 @@ public class UserDetailsComposite extends Composite {
 	private UserListItemResponse currentListItem;
 	private UserDetailResponse currentUser;
 	private UpdateUserCapabilities updateCapabilities;
+	@SuppressWarnings("unused")
 	private CreateUserCapabilities createCapabilities;
 	
 	private boolean createMode;

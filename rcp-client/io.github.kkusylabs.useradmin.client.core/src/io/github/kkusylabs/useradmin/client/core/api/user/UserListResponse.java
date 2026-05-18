@@ -3,10 +3,10 @@ package io.github.kkusylabs.useradmin.client.core.api.user;
 import io.github.kkusylabs.useradmin.client.core.api.common.PagedResponse;
 
 /**
- * Paginated response for the user list endpoint.
+ * Paginated response returned by the user list endpoint.
  *
- * @param users     page of users with actor-relative action flags
- * @param canCreate whether the actor may open the create-user flow
+ * @param users paginated collection of users with actor-relative action flags
+ * @param canCreate indicates whether the current user can create users
  */
 public record UserListResponse(
 		PagedResponse<UserListItemResponse> users, 

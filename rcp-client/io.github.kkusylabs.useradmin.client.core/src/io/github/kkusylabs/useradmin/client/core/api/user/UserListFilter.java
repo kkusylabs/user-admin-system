@@ -2,14 +2,15 @@ package io.github.kkusylabs.useradmin.client.core.api.user;
 
 import io.github.kkusylabs.useradmin.client.core.api.common.SortSpec;
 
-//UserListFilter filter = new UserListFilter(
-//        "smith",
-//        true,
-//        3L,
-//        Role.ADMIN,
-//        new SortSpec("username", SortSpec.Direction.ASC)
-//);
-
+/**
+ * Filtering and sorting options used when retrieving paginated user lists.
+ *
+ * @param search optional free-text search value
+ * @param active optional active status filter
+ * @param departmentId optional department identifier filter
+ * @param role optional role filter
+ * @param sort optional sort specification
+ */
 public record UserListFilter(
 		String search, 
 		Boolean active, 

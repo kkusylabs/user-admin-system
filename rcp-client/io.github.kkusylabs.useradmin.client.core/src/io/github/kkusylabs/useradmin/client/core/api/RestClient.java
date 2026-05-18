@@ -16,6 +16,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 
+/**
+ * Minimal JSON-based REST client used by API-specific client wrappers.
+ *
+ * <p>Handles request serialization, response deserialization, authentication,
+ * timeout configuration, and HTTP error translation.
+ */
 public class RestClient {
 
 	private final HttpClient httpClient;
@@ -24,6 +30,15 @@ public class RestClient {
 	private final Duration requestTimeout;
 	private final AuthTokenProvider authTokenProvider;
 
+	/**
+	 * Creates a new REST client instance.
+	 *
+	 * @param httpClient underlying HTTP transport
+	 * @param objectMapper mapper used for JSON serialization and deserialization
+	 * @param baseUrl base API URL
+	 * @param requestTimeout timeout applied to all HTTP requests
+	 * @param authTokenProvider optional bearer token provider
+	 */
 	public RestClient(HttpClient httpClient, ObjectMapper objectMapper, String baseUrl, Duration requestTimeout,
 			AuthTokenProvider authTokenProvider) {
 		this.httpClient = Objects.requireNonNull(httpClient, "httpClient must not be null");
@@ -33,12 +48,32 @@ public class RestClient {
 		this.authTokenProvider = authTokenProvider;
 	}
 
+	/**
+	 * Executes a {@code GET} request and deserializes the JSON response.
+	 *
+	 * @param path relative API path
+	 * @param responseType expected response type
+	 * @return deserialized response body, or {@code null} for an empty response
+	 * @param <T> response type
+	 * @throws RestClientException if the request fails or the response cannot be parsed
+	 */
 	public <T> T get(String path, Class<T> responseType) {
 		HttpRequest request = requestBuilder(path).GET().build();
 
 		return send(request, responseType);
 	}
 
+	/**
+	 * Executes a {@code GET} request with query parameters and deserializes the
+	 * JSON response.
+	 *
+	 * @param path relative API path
+	 * @param queryParams query parameters appended to the request URL
+	 * @param responseType expected response type
+	 * @return deserialized response body, or {@code null} for an empty response
+	 * @param <T> response type
+	 * @throws RestClientException if the request fails or the response cannot be parsed
+	 */
 	public <T> T get(String path, Map<String, ?> queryParams, Class<T> responseType) {
 		String fullPath = appendQueryParams(path, queryParams);
 
@@ -47,6 +82,16 @@ public class RestClient {
 		return send(request, responseType);
 	}
 
+	/**
+	 * Executes a {@code POST} request using a JSON request body.
+	 *
+	 * @param path relative API path
+	 * @param requestBody request payload serialized as JSON
+	 * @param responseType expected response type
+	 * @return deserialized response body, or {@code null} for an empty response
+	 * @param <T> response type
+	 * @throws RestClientException if the request fails or the response cannot be parsed
+	 */
 	public <T> T post(String path, Object requestBody, Class<T> responseType) {
 		String json = serialize(requestBody);
 
@@ -56,6 +101,16 @@ public class RestClient {
 		return send(request, responseType);
 	}
 
+	/**
+	 * Executes a {@code PUT} request using a JSON request body.
+	 *
+	 * @param path relative API path
+	 * @param requestBody request payload serialized as JSON
+	 * @param responseType expected response type
+	 * @return deserialized response body, or {@code null} for an empty response
+	 * @param <T> response type
+	 * @throws RestClientException if the request fails or the response cannot be parsed
+	 */
 	public <T> T put(String path, Object requestBody, Class<T> responseType) {
 		String json = serialize(requestBody);
 
@@ -65,18 +120,43 @@ public class RestClient {
 		return send(request, responseType);
 	}
 
+	/**
+	 * Executes a {@code DELETE} request.
+	 *
+	 * @param path relative API path
+	 * @throws RestClientException if the request fails
+	 */
 	public void delete(String path) {
 		HttpRequest request = requestBuilder(path).DELETE().build();
 
 		sendWithoutBody(request);
 	}
 
+	/**
+	 * Executes a {@code DELETE} request and deserializes the JSON response.
+	 *
+	 * @param path relative API path
+	 * @param responseType expected response type
+	 * @return deserialized response body, or {@code null} for an empty response
+	 * @param <T> response type
+	 * @throws RestClientException if the request fails or the response cannot be parsed
+	 */
 	public <T> T delete(String path, Class<T> responseType) {
 		HttpRequest request = requestBuilder(path).DELETE().build();
 
 		return send(request, responseType);
 	}
 
+	/**
+	 * Executes a {@code PATCH} request using a JSON request body.
+	 *
+	 * @param path relative API path
+	 * @param requestBody request payload serialized as JSON
+	 * @param responseType expected response type
+	 * @return deserialized response body, or {@code null} for an empty response
+	 * @param <T> response type
+	 * @throws RestClientException if the request fails or the response cannot be parsed
+	 */
 	public <T> T patch(String path, Object requestBody, Class<T> responseType) {
 		String json = serialize(requestBody);
 
