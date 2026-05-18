@@ -102,9 +102,9 @@ public class UserListComposite extends Composite {
 	private void createColumns() {
 		createColumn("Username", 140, item -> item.user().username());
 
-		createColumn("Full Name", 180, item -> item.user().fullName());
+		createColumn("Full Name", 160, item -> item.user().fullName());
 
-		createColumn("Role", 100,
+		createColumn("Role", 80,
 				item -> item.user().role() == null ? "" : item.user().role().getDisplayName());
 
 		createColumn("Department", 160,

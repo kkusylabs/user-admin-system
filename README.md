@@ -36,6 +36,10 @@ The system emphasizes:
 
 ## Screenshots
 
+### Login
+
+![Login](docs/images/login.png)
+
 ### User Management
 
 ![User Management](docs/images/users.png)
@@ -44,16 +48,26 @@ The system emphasizes:
 
 ![Department Management](docs/images/departments.png)
 
-### Login
-
-![Login](docs/images/login.png)
-
 ## Demo Video
 
 A short walkthrough of login, user management, filtering, paging, and department management:
 
-[Watch the demo](docs/videos/demo.mp4)
+[Watch the demo video](https://github.com/kkusylabs/user-admin-system/releases/download/v1.0/demo.mp4)
 
+## Downloads
+
+Prebuilt desktop client distributions and demo assets are available in the latest release.
+
+### Version 1.0
+
+[GitHub Release v1.0](https://github.com/kkusylabs/user-admin-system/releases/tag/v1.0)
+
+#### Assets
+
+* [Windows Client](https://github.com/kkusylabs/user-admin-system/releases/download/v1.0/useradmin-win32.win32.x86_64.zip)
+* [Mac Client](https://github.com/kkusylabs/user-admin-system/releases/download/v1.0/useradmin-macosx.cocoa.x86_64.tar.gz )
+* [Linux Client](https://github.com/kkusylabs/user-admin-system/releases/download/v1.0/useradmin-linux.gtk.x86_64.tar.gz)
+* [Demo Video](https://github.com/kkusylabs/user-admin-system/releases/download/v1.0/demo.mp4)
 # Architecture
 
 The application follows a layered architecture.
@@ -104,18 +118,7 @@ The desktop client is built with:
 * JFace
 * async REST client integration
 
-The client includes:
-
-* login workflow
-* JWT authentication
-* master-detail administration UI
-* capability-aware editing
-* paginated user management
-* filtering and search
-* department management
-* async API coordination
-
-The UI follows a composite-based structure:
+The UI follows a composite-oriented structure consisting of:
 
 * Parts
 * Composites
@@ -123,7 +126,9 @@ The UI follows a composite-based structure:
 * API client layer
 * UI orchestration layer
 
-# Desktop Client and Modernization Context
+The client communicates with the backend exclusively through REST APIs and capability-driven responses.
+
+## Desktop Client and Modernization Context
 
 The project intentionally includes an Eclipse RCP desktop client to explore modernization concerns commonly found in enterprise Java environments.
 
