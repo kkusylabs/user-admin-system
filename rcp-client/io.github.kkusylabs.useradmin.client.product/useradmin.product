@@ -13,7 +13,7 @@
 
    <windowImages/>
 
-   <launcher>
+   <launcher name="useradmin">
       <win useIco="false">
          <bmp/>
       </win>
