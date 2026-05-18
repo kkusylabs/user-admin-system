@@ -12,14 +12,46 @@ import io.github.kkusylabs.useradmin.client.core.api.ForbiddenException;
 import io.github.kkusylabs.useradmin.client.core.api.UnauthorizedException;
 import io.github.kkusylabs.useradmin.client.ui.events.AppTopics;
 
+/**
+ * Centralized UI error handling utility for asynchronous API operations.
+ *
+ * <p>
+ * This handler coordinates:
+ * </p>
+ *
+ * <ul>
+ *   <li>authentication expiration handling</li>
+ *   <li>authorization error dialogs</li>
+ *   <li>default API error dialogs</li>
+ *   <li>exception unwrapping for async operations</li>
+ * </ul>
+ */
 public final class ApiErrorHandler {
 
 	private final IEventBroker eventBroker;
 
+	/**
+	 * Creates the API error handler.
+	 *
+	 * @param eventBroker Eclipse event broker
+	 */
 	public ApiErrorHandler(IEventBroker eventBroker) {
 		this.eventBroker = eventBroker;
 	}
 
+	/**
+	 * Handles an API error using standard application error behavior.
+	 *
+	 * <p>
+	 * Unauthorized errors trigger authentication expiration handling while
+	 * forbidden errors display a permission dialog.
+	 * </p>
+	 *
+	 * @param shell parent shell
+	 * @param error API error
+	 * @param errorTitle error dialog title
+	 * @param fallbackErrorMessage fallback error message
+	 */
 	public void handleDefault(Shell shell, Throwable error, String errorTitle, String fallbackErrorMessage) {
 
 		if (error instanceof UnauthorizedException) {
@@ -35,6 +67,12 @@ public final class ApiErrorHandler {
 		MessageDialog.openError(shell, errorTitle, getUserFriendlyMessage(error, fallbackErrorMessage));
 	}
 
+	/**
+	 * Unwraps nested asynchronous execution exceptions to expose the root cause.
+	 *
+	 * @param error wrapped error
+	 * @return root cause error
+	 */
 	public static Throwable unwrap(Throwable error) {
 		Throwable current = error;
 

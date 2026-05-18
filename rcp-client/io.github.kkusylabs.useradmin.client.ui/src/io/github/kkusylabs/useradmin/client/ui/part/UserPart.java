@@ -36,6 +36,41 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 
+/**
+ * Eclipse part responsible for user administration workflows.
+ *
+ * <p>
+ * This part coordinates interactions between:
+ * </p>
+ *
+ * <ul>
+ *   <li>{@link UserFilterComposite}</li>
+ *   <li>{@link UserListComposite}</li>
+ *   <li>{@link UserDetailsComposite}</li>
+ *   <li>{@link UserApiClient}</li>
+ *   <li>{@link DepartmentApiClient}</li>
+ * </ul>
+ *
+ * <p>
+ * Supported workflows include:
+ * </p>
+ *
+ * <ul>
+ *   <li>user filtering and search</li>
+ *   <li>paged user navigation</li>
+ *   <li>user selection synchronization</li>
+ *   <li>user creation</li>
+ *   <li>user editing</li>
+ *   <li>user deletion</li>
+ *   <li>department option loading</li>
+ *   <li>unsaved change handling</li>
+ * </ul>
+ *
+ * <p>
+ * REST operations are executed asynchronously through
+ * {@link UiApiRunner}.
+ * </p>
+ */
 public class UserPart {
 
 	private UserListComposite userListComposite;
@@ -65,6 +100,12 @@ public class UserPart {
 	@Inject
 	private SessionTokenStore tokenStore;
 
+
+	/**
+	 * Creates the user administration UI.
+	 *
+	 * @param parent parent composite
+	 */
 	@PostConstruct
 	public void createControls(Composite parent) {	
 		parent.setLayout(new GridLayout(1, false));
@@ -178,6 +219,12 @@ public class UserPart {
 		});		
 	}
 	
+	/**
+	 * Handles successful authentication events by loading initial user and
+	 * department data.
+	 *
+	 * @param username authenticated username
+	 */
 	@Inject
 	@Optional
 	public void onLoginSuccess(@UIEventTopic(AppTopics.LOGIN_SUCCESS) String username) {
@@ -472,11 +519,17 @@ public class UserPart {
 		userDetailsComposite.clear();
 	}
 	
+	/**
+	 * Sets focus to the user list composite.
+	 */
 	@Focus
 	public void setFocus() {
 		userListComposite.setFocus();
 	}
 	
+	/**
+	 * Performs part cleanup during disposal.
+	 */
 	@PreDestroy
 	public void dispose() {
 	}

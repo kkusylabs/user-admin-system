@@ -15,6 +15,26 @@ import io.github.kkusylabs.useradmin.client.core.api.department.UpdateDepartment
 import io.github.kkusylabs.useradmin.client.ui.util.SwtUtil;
 import io.github.kkusylabs.useradmin.client.ui.util.TextUtil;
 
+
+/**
+ * Composite displaying department details and edit workflows.
+ *
+ * <p>
+ * This composite supports:
+ * </p>
+ *
+ * <ul>
+ *   <li>viewing department details</li>
+ *   <li>editing existing departments</li>
+ *   <li>creating new departments</li>
+ *   <li>capability-aware UI behavior</li>
+ * </ul>
+ *
+ * <p>
+ * User interactions are delegated through
+ * {@link DepartmentDetailsActions}.
+ * </p>
+ */
 public class DepartmentDetailsComposite extends Composite {
 
 	private Text nameText;
@@ -33,6 +53,12 @@ public class DepartmentDetailsComposite extends Composite {
 	private boolean createMode;
 	private boolean editMode;
 
+	/**
+	 * Creates the department details composite.
+	 *
+	 * @param parent parent composite
+	 * @param style SWT style flags
+	 */
 	public DepartmentDetailsComposite(Composite parent, int style) {
 		super(parent, style);
 
@@ -98,6 +124,11 @@ public class DepartmentDetailsComposite extends Composite {
 		cancelButton = SwtUtil.createPushButton(buttons, "Cancel");
 	}
 
+	/**
+	 * Registers callbacks for department detail actions.
+	 *
+	 * @param actions action handler
+	 */
 	public void setActions(DepartmentDetailsActions actions) {
 		this.actions = actions;
 	}
@@ -133,6 +164,11 @@ public class DepartmentDetailsComposite extends Composite {
 		});
 	}
 
+	/**
+	 * Displays the specified department in read-only view mode.
+	 *
+	 * @param item department list item to display
+	 */
 	public void showViewMode(DepartmentListItemResponse item) {
 		this.currentListItem = item;
 		this.currentDepartment = item == null ? null : item.department();
@@ -150,6 +186,11 @@ public class DepartmentDetailsComposite extends Composite {
 		showActionButtons(item.canUpdate(), false);
 	}
 
+	/**
+	 * Displays the specified department in edit mode.
+	 *
+	 * @param item department list item to edit
+	 */
 	public void showEditMode(DepartmentListItemResponse item) {
 		this.currentListItem = item;
 		this.currentDepartment = item == null ? null : item.department();
@@ -167,6 +208,9 @@ public class DepartmentDetailsComposite extends Composite {
 		showActionButtons(false, item.canUpdate());
 	}
 
+	/**
+	 * Displays the create department workflow.
+	 */
 	public void showCreateMode() {
 		this.currentListItem = null;
 		this.currentDepartment = null;
@@ -184,6 +228,9 @@ public class DepartmentDetailsComposite extends Composite {
 		showActionButtons(false, true);
 	}
 
+	/**
+	 * Clears the current department details and resets the composite state.
+	 */
 	public void clear() {
 		this.currentListItem = null;
 		this.currentDepartment = null;
@@ -196,6 +243,11 @@ public class DepartmentDetailsComposite extends Composite {
 		showActionButtons(false, false);
 	}
 
+	/**
+	 * Returns whether the composite is currently in a create or edit workflow.
+	 *
+	 * @return {@code true} if editing or creating a department
+	 */
 	public boolean hasPendingChanges() {
 		return createMode || editMode;
 	}

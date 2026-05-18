@@ -25,6 +25,30 @@ import io.github.kkusylabs.useradmin.client.core.api.user.UserPatch;
 import io.github.kkusylabs.useradmin.client.ui.util.SwtUtil;
 import io.github.kkusylabs.useradmin.client.ui.util.TextUtil;
 
+/**
+ * Composite displaying user details and user administration workflows.
+ *
+ * <p>
+ * This composite supports:
+ * </p>
+ *
+ * <ul>
+ *   <li>viewing user details</li>
+ *   <li>editing existing users</li>
+ *   <li>creating new users</li>
+ *   <li>capability-aware field editing</li>
+ *   <li>PATCH-style update generation</li>
+ * </ul>
+ *
+ * <p>
+ * UI behavior is dynamically driven by server-provided capabilities,
+ * allowing the client to remain consistent with backend authorization rules.
+ * </p>
+ *
+ * <p>
+ * User interactions are delegated through {@link UserDetailsActions}.
+ * </p>
+ */
 public class UserDetailsComposite extends Composite {
 	private Label passwordLabel;
 	
@@ -55,6 +79,12 @@ public class UserDetailsComposite extends Composite {
 	
 	private List<DepartmentOption> departmentOptions = List.of();
 
+	/**
+	 * Creates the user details composite.
+	 *
+	 * @param parent parent composite
+	 * @param style SWT style flags
+	 */
 	public UserDetailsComposite(Composite parent, int style) {
 		super(parent, style);
 		createControls();
@@ -141,6 +171,11 @@ public class UserDetailsComposite extends Composite {
 		cancelButton = SwtUtil.createPushButton(buttons, "Cancel");
 	}
 	
+	/**
+	 * Registers callbacks for user detail actions.
+	 *
+	 * @param actions action handler
+	 */
 	public void setActions(UserDetailsActions actions) {
 		this.actions = actions;
 	}
@@ -174,6 +209,11 @@ public class UserDetailsComposite extends Composite {
 		});		
 	}
 	
+	/**
+	 * Displays the specified user in read-only view mode.
+	 *
+	 * @param item selected user item
+	 */
 	public void showViewMode(UserListItemResponse item) {
 		this.currentListItem = item;
 		this.currentUser = item == null ? null : item.user();
@@ -200,6 +240,12 @@ public class UserDetailsComposite extends Composite {
 		showActionButtons(item.canUpdate(), false);
 	}
 	
+	/**
+	 * Displays the specified user in edit mode using the provided edit response
+	 * and update capabilities.
+	 *
+	 * @param response edit response containing user details and capabilities
+	 */
 	public void showEditMode(EditUserResponse response) {
 		this.currentUser = response.user();
 		this.updateCapabilities = response.updateCapabilities();
@@ -223,6 +269,11 @@ public class UserDetailsComposite extends Composite {
 		showActionButtons(false, true);
 	}
 	
+	/**
+	 * Displays the create user workflow using the provided create capabilities.
+	 *
+	 * @param capabilities create capabilities controlling allowed options
+	 */
 	public void showCreateMode(CreateUserCapabilities capabilities) {
 		this.currentListItem = null;
 		this.currentUser = null;
@@ -254,7 +305,9 @@ public class UserDetailsComposite extends Composite {
 		showActionButtons(false, capabilities.canCreate());
 	}
 	
-
+	/**
+	 * Clears the current user details and resets the composite state.
+	 */
 	public void clear() {
 		this.currentListItem = null;
 		this.currentUser = null;
@@ -497,6 +550,11 @@ public class UserDetailsComposite extends Composite {
 		((GridData) button.getLayoutData()).exclude = !visible;
 	}
 	
+	/**
+	 * Returns whether the composite is currently in a create or edit workflow.
+	 *
+	 * @return {@code true} if editing or creating a user
+	 */
 	public boolean hasPendingChanges() {
 		return createMode || editMode;
 	}

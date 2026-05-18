@@ -10,27 +10,38 @@ import org.eclipse.swt.widgets.Control;
 
 import jakarta.inject.Inject;
 
-//private void loadUserDetails(Long userId) {
-//    apiRunner.task(() -> userApiClient.getUser(userId))
-//        .onControl(userDetails)
-//        .onBefore(() -> userDetails.setLoading(true))
-//        .onSuccess(user -> userDetails.showUser(user))
-//        .onCustomError(error -> {
-//            if (error instanceof NotFoundException) {
-//                MessageDialog.openInformation(shell, "Gone", "User no longer exists.");
-//                loadUsers(); // Trigger a refresh
-//                return true; // We handled it!
-//            }
-//            return false; // Not a 404? Let the default error handler take it.
-//        })
-//        .onError("Load Failed", "Could not fetch user details.")
-//        .execute();
-//}
-
-
 /**
- * A fluent, thread-safe runner for executing API calls within an Eclipse e4 environment.
- * Handles background execution, UI synchronization, and lifecycle safety checks.
+ * Fluent utility for executing asynchronous REST API operations within the
+ * Eclipse E4 UI environment.
+ *
+ * <p>
+ * This runner coordinates:
+ * </p>
+ *
+ * <ul>
+ *   <li>background API execution</li>
+ *   <li>SWT UI thread synchronization</li>
+ *   <li>control lifecycle safety checks</li>
+ *   <li>default and custom error handling</li>
+ *   <li>success callback execution</li>
+ * </ul>
+ *
+ * <p>
+ * Requests are configured using a fluent builder API through
+ * {@link ApiRequestBuilder}.
+ * </p>
+ *
+ * <p>
+ * Example usage:
+ * </p>
+ *
+ * <pre>{@code
+ * apiRunner.task(() -> userApiClient.getUsers(page, size, filter))
+ *     .onControl(userListComposite)
+ *     .onSuccess(this::showUsers)
+ *     .onError("Load Failed", "Could not load users.")
+ *     .execute();
+ * }</pre>
  */
 public final class UiApiRunner {
 
@@ -38,6 +49,13 @@ public final class UiApiRunner {
 	private final UISynchronize uiSync;
 	private final ApiErrorHandler apiErrorHandler;
 
+	/**
+	 * Creates the UI API runner.
+	 *
+	 * @param apiExecutor executor used for background API operations
+	 * @param uiSync SWT UI synchronization service
+	 * @param apiErrorHandler default API error handler
+	 */
 	@Inject
 	public UiApiRunner(ApiExecutor apiExecutor, UISynchronize uiSync, ApiErrorHandler apiErrorHandler) {
 		this.apiExecutor = apiExecutor;
@@ -46,14 +64,22 @@ public final class UiApiRunner {
 	}
 
 	/**
-	 * Starts a new API request for a task that returns a result.
+	 * Starts a new asynchronous API request for a task that returns a result.
+	 *
+	 * @param apiCall API operation supplier
+	 * @param <T> result type
+	 * @return request builder
 	 */
 	public <T> ApiRequestBuilder<T> task(Supplier<T> apiCall) {
 		return new ApiRequestBuilder<>(apiCall);
 	}
 
 	/**
-	 * Starts a new API request for a task that returns nothing (void).
+	 * Starts a new asynchronous API request for a task that does not return a
+	 * result.
+	 *
+	 * @param runnable API operation
+	 * @return request builder
 	 */
 	public ApiRequestBuilder<Void> task(Runnable runnable) {
 		return new ApiRequestBuilder<>(() -> {
@@ -63,7 +89,9 @@ public final class UiApiRunner {
 	}
 
 	/**
-	 * Inner Builder class to configure and execute the API request.
+	 * Fluent builder used to configure and execute asynchronous API requests.
+	 *
+	 * @param <T> API response type
 	 */
 	public final class ApiRequestBuilder<T> {
 		private final Supplier<T> apiCall;

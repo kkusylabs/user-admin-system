@@ -15,6 +15,20 @@ import io.github.kkusylabs.useradmin.client.ui.events.AppTopics;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 
+/**
+ * Application startup addon responsible for coordinating the login workflow.
+ *
+ * <p>
+ * This addon displays the login dialog during application startup and when
+ * authentication expires. The login dialog is deferred until the primary
+ * application shell becomes available.
+ * </p>
+ *
+ * <p>
+ * Authentication expiration events are received through the Eclipse event
+ * broker using {@link AppTopics#AUTH_EXPIRED}.
+ * </p>
+ */
 public class AppStartupAddon {
 
 	@Inject
@@ -30,11 +44,21 @@ public class AppStartupAddon {
 
 	private boolean loginShowing = false;
 
+	/**
+	 * Initializes the startup workflow by asynchronously waiting for the
+	 * application shell and displaying the login dialog.
+	 */
 	@PostConstruct
 	public void startup() {
 		uiSync.asyncExec(this::showLoginWhenShellExists);
 	}
 
+	/**
+	 * Handles authentication expiration events by clearing the current session
+	 * token and reopening the login dialog.
+	 *
+	 * @param ignored unused event payload
+	 */
 	@Inject
 	@Optional
 	public void onAuthExpired(@UIEventTopic(AppTopics.AUTH_EXPIRED) Object ignored) {
@@ -45,6 +69,10 @@ public class AppStartupAddon {
 		});
 	}
 
+	/**
+	 * Waits for the primary application shell to become available before
+	 * displaying the login dialog.
+	 */
 	private void showLoginWhenShellExists() {
 		Shell shell = getShell();
 
@@ -56,6 +84,16 @@ public class AppStartupAddon {
 		showLoginIfNeeded(shell);
 	}
 
+	/**
+	 * Displays the login dialog if one is not already active.
+	 *
+	 * <p>
+	 * If the login dialog is canceled or closed without successful
+	 * authentication, the main application shell is closed.
+	 * </p>
+	 *
+	 * @param shell application shell used as the dialog parent
+	 */
 	private void showLoginIfNeeded(Shell shell) {
 		if (loginShowing) {
 			return;
@@ -77,6 +115,12 @@ public class AppStartupAddon {
 		}
 	}
 
+	/**
+	 * Returns the primary SWT shell associated with the Eclipse application
+	 * window.
+	 *
+	 * @return application shell, or {@code null} if not yet available
+	 */
 	private Shell getShell() {
 		if (application.getChildren().isEmpty()) {
 			return null;

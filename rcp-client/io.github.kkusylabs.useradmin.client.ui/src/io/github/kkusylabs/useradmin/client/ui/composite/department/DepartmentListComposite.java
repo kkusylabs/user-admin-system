@@ -21,6 +21,25 @@ import io.github.kkusylabs.useradmin.client.core.api.department.DepartmentListRe
 import io.github.kkusylabs.useradmin.client.ui.util.SwtUtil;
 import io.github.kkusylabs.useradmin.client.ui.util.TextUtil;
 
+/**
+ * Composite displaying the department administration list and related actions.
+ *
+ * <p>
+ * This composite provides:
+ * </p>
+ *
+ * <ul>
+ *   <li>department table display</li>
+ *   <li>department selection handling</li>
+ *   <li>add/delete department actions</li>
+ *   <li>selection synchronization with the details view</li>
+ * </ul>
+ *
+ * <p>
+ * Department interactions are delegated through
+ * {@link DepartmentListActions}.
+ * </p>
+ */
 public class DepartmentListComposite extends Composite {
 
 	private TableViewer viewer;
@@ -32,6 +51,12 @@ public class DepartmentListComposite extends Composite {
 
 	private DepartmentListResponse currentResponse;
 
+	/**
+	 * Creates the department list composite.
+	 *
+	 * @param parent parent composite
+	 * @param style SWT style flags
+	 */
 	public DepartmentListComposite(Composite parent, int style) {
 		super(parent, style);
 
@@ -106,6 +131,11 @@ public class DepartmentListComposite extends Composite {
 		});
 	}
 
+	/**
+	 * Registers action callbacks for department list interactions.
+	 *
+	 * @param actions department list action handler
+	 */
 	public void setActions(DepartmentListActions actions) {
 		this.actions = actions;
 
@@ -138,6 +168,16 @@ public class DepartmentListComposite extends Composite {
 		});
 	}
 
+	/**
+	 * Sets the departments displayed in the table.
+	 *
+	 * <p>
+	 * The response also controls capability-aware UI state such as whether
+	 * department creation is allowed.
+	 * </p>
+	 *
+	 * @param response department list response
+	 */
 	public void setDepartments(DepartmentListResponse response) {
 		this.currentResponse = response;
 
@@ -153,6 +193,18 @@ public class DepartmentListComposite extends Composite {
 		deleteButton.setEnabled(false);
 	}
 
+
+	/**
+	 * Replaces an existing department item in the current table contents and
+	 * refreshes the viewer.
+	 *
+	 * <p>
+	 * If the updated department is currently selected, the selection is
+	 * preserved after refresh.
+	 * </p>
+	 *
+	 * @param updated updated department item
+	 */
 	public void replaceDepartment(DepartmentListItemResponse updated) {
 		if (currentResponse == null || currentResponse.departments() == null || updated == null) {
 			return;
@@ -172,6 +224,15 @@ public class DepartmentListComposite extends Composite {
 		}
 	}
 
+	/**
+	 * Selects the department with the specified identifier.
+	 *
+	 * <p>
+	 * If the department cannot be found, the current selection is cleared.
+	 * </p>
+	 *
+	 * @param departmentId department identifier to select
+	 */
 	public void selectDepartment(Long departmentId) {
 		if (departmentId == null) {
 			viewer.setSelection(StructuredSelection.EMPTY);
@@ -193,6 +254,9 @@ public class DepartmentListComposite extends Composite {
 		viewer.setSelection(StructuredSelection.EMPTY);
 	}
 
+	/**
+	 * Clears the department table and resets UI state.
+	 */
 	public void clear() {
 		this.currentResponse = null;
 

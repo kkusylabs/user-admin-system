@@ -14,6 +14,20 @@ import org.eclipse.swt.widgets.Text;
 import io.github.kkusylabs.useradmin.client.core.api.UnauthorizedException;
 import io.github.kkusylabs.useradmin.client.ui.runtime.ApiErrorHandler;
 
+/**
+ * Login dialog used to authenticate users against the backend API.
+ *
+ * <p>
+ * The dialog performs asynchronous authentication using
+ * {@link LoginService} and displays validation and authentication
+ * errors directly in the UI.
+ * </p>
+ *
+ * <p>
+ * Successful authentication closes the dialog and allows application
+ * startup to continue.
+ * </p>
+ */
 public class LoginDialog extends TitleAreaDialog {
 
 	private final LoginService loginService;
@@ -22,6 +36,12 @@ public class LoginDialog extends TitleAreaDialog {
 	private Text usernameText;
 	private Text passwordText;
 	
+	/**
+	 * Creates the login dialog.
+	 *
+	 * @param parentShell parent shell
+	 * @param loginService service used to perform authentication
+	 */
 	public LoginDialog(
 			Shell parentShell, 
 			LoginService loginService) {
@@ -29,6 +49,9 @@ public class LoginDialog extends TitleAreaDialog {
 		this.loginService = loginService;
 	}
 
+	/**
+	 * Initializes the dialog title and message.
+	 */
 	@Override
 	public void create() {
 		super.create();
@@ -37,6 +60,12 @@ public class LoginDialog extends TitleAreaDialog {
 		setMessage("Enter your user name and password", IMessageProvider.INFORMATION);
 	}
 
+	/**
+	 * Creates the login form controls.
+	 *
+	 * @param parent parent composite
+	 * @return dialog control
+	 */
 	@Override
 	protected Control createDialogArea(Composite parent) {
 		Composite area = (Composite) super.createDialogArea(parent);
@@ -60,6 +89,14 @@ public class LoginDialog extends TitleAreaDialog {
 		return area;
 	}
 
+	/**
+	 * Validates credentials and initiates asynchronous authentication.
+	 *
+	 * <p>
+	 * During authentication the dialog buttons are temporarily disabled
+	 * to prevent duplicate login requests.
+	 * </p>
+	 */
 	@Override
 	protected void okPressed() {
 		if (loginInProgress) {

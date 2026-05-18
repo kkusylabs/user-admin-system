@@ -23,10 +23,46 @@ import io.github.kkusylabs.useradmin.client.ui.runtime.ApiExecutor;
 import io.github.kkusylabs.useradmin.client.ui.runtime.UiApiRunner;
 import jakarta.annotation.PreDestroy;
 
+/**
+ * Eclipse E4 application lifecycle configuration.
+ *
+ * <p>
+ * This lifecycle class initializes shared application services and registers
+ * them in the Eclipse dependency injection context during application startup.
+ * </p>
+ *
+ * <p>
+ * Configured services include:
+ * </p>
+ *
+ * <ul>
+ *   <li>HTTP and REST infrastructure</li>
+ *   <li>authentication and session management</li>
+ *   <li>REST API clients</li>
+ *   <li>asynchronous API execution support</li>
+ *   <li>UI error handling and API coordination</li>
+ * </ul>
+ */
 public class E4LifeCycle {
+	
+	/**
+	 * Creates the application lifecycle configuration.
+	 */
 	public E4LifeCycle() {
 	}
 
+	/**
+	 * Initializes application services after the Eclipse context is created.
+	 *
+	 * <p>
+	 * Core infrastructure services are created and registered in the
+	 * dependency injection context for use throughout the application.
+	 * </p>
+	 *
+	 * @param context Eclipse dependency injection context
+	 * @param eventBroker Eclipse event broker
+	 * @param uiSync SWT UI synchronization service
+	 */
 	@PostContextCreate
 	public void postContextCreate(
 			IEclipseContext context, 
@@ -65,6 +101,15 @@ public class E4LifeCycle {
 		context.set(LoginService.class, loginService);
 	}
 	
+	/**
+	 * Performs application shutdown cleanup.
+	 *
+	 * <p>
+	 * This currently shuts down asynchronous API execution resources.
+	 * </p>
+	 *
+	 * @param context Eclipse dependency injection context
+	 */
 	@PreDestroy
 	public void preDestroy(IEclipseContext context) {
 		ApiExecutor apiExecutor = context.get(ApiExecutor.class);

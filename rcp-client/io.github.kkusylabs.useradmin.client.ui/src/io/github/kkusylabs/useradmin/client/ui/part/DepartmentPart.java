@@ -26,6 +26,37 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 
+/**
+ * Eclipse part responsible for department administration workflows.
+ *
+ * <p>
+ * This part coordinates interactions between:
+ * </p>
+ *
+ * <ul>
+ *   <li>{@link DepartmentListComposite}</li>
+ *   <li>{@link DepartmentDetailsComposite}</li>
+ *   <li>{@link DepartmentApiClient}</li>
+ * </ul>
+ *
+ * <p>
+ * Supported workflows include:
+ * </p>
+ *
+ * <ul>
+ *   <li>loading departments</li>
+ *   <li>department selection synchronization</li>
+ *   <li>department creation</li>
+ *   <li>department editing</li>
+ *   <li>department deletion</li>
+ *   <li>unsaved change handling</li>
+ * </ul>
+ *
+ * <p>
+ * REST operations are executed asynchronously through
+ * {@link UiApiRunner}.
+ * </p>
+ */
 public class DepartmentPart {
 
 	private DepartmentListComposite departmentListComposite;
@@ -44,6 +75,11 @@ public class DepartmentPart {
 
 	private boolean suppressSelectionEvents;
 
+	/**
+	 * Creates the department administration UI.
+	 *
+	 * @param parent parent composite
+	 */
 	@PostConstruct
 	public void createControls(Composite parent) {
 		parent.setLayout(new GridLayout(1, false));
@@ -113,6 +149,11 @@ public class DepartmentPart {
 		});
 	}
 
+	/**
+	 * Handles successful authentication events by loading department data.
+	 *
+	 * @param username authenticated username
+	 */
 	@Inject
 	@Optional
 	public void onLoginSuccess(@UIEventTopic(AppTopics.LOGIN_SUCCESS) String username) {
@@ -330,11 +371,17 @@ public class DepartmentPart {
 				"Discard unsaved changes?");
 	}
 
+	/**
+	 * Sets focus to the department list composite.
+	 */
 	@Focus
 	public void setFocus() {
 		departmentListComposite.setFocus();
 	}
 
+	/**
+	 * Performs part cleanup during disposal.
+	 */
 	@PreDestroy
 	public void dispose() {
 	}

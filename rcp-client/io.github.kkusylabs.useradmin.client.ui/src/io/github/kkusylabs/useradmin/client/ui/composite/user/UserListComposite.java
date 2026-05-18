@@ -23,6 +23,27 @@ import io.github.kkusylabs.useradmin.client.core.api.user.UserListResponse;
 import io.github.kkusylabs.useradmin.client.ui.util.SwtUtil;
 import io.github.kkusylabs.useradmin.client.ui.util.TextUtil;
 
+/**
+ * Composite displaying the paginated user administration list and related
+ * actions.
+ *
+ * <p>
+ * This composite provides:
+ * </p>
+ *
+ * <ul>
+ *   <li>user table display</li>
+ *   <li>user selection handling</li>
+ *   <li>add/delete user actions</li>
+ *   <li>paging navigation controls</li>
+ *   <li>page size selection</li>
+ *   <li>selection synchronization with the details view</li>
+ * </ul>
+ *
+ * <p>
+ * User interactions are delegated through {@link UserListActions}.
+ * </p>
+ */
 public class UserListComposite extends Composite {
 
 	private TableViewer viewer;
@@ -47,6 +68,12 @@ public class UserListComposite extends Composite {
 	
 	private Combo pageSizeCombo;
 	
+	/**
+	 * Creates the user list composite.
+	 *
+	 * @param parent parent composite
+	 * @param style SWT style flags
+	 */
 	public UserListComposite(Composite parent, int style) {
 		super(parent, style);
 		createControls();
@@ -241,11 +268,16 @@ public class UserListComposite extends Composite {
 			}
 		});
 	}
-	
+
 	private int getSelectedPageSize() {
 		return Integer.parseInt(pageSizeCombo.getText());
 	}
-		
+
+	/**
+	 * Registers callbacks for user list actions.
+	 *
+	 * @param actions user list action handler
+	 */
 	public void setActions(UserListActions actions) {
 		this.actions = actions;
 	}
@@ -299,7 +331,17 @@ public class UserListComposite extends Composite {
 			}
 		});
 	}
-	
+
+	/**
+	 * Sets the users displayed in the table and updates paging controls.
+	 *
+	 * <p>
+	 * The response also controls capability-aware UI state such as whether
+	 * user creation is allowed.
+	 * </p>
+	 *
+	 * @param response paged user list response
+	 */
 	public void setUsers(UserListResponse response) {
 		this.currentResponse = response;
 
@@ -316,7 +358,10 @@ public class UserListComposite extends Composite {
 
 		updatePaging(response);
 	}
-	
+
+	/**
+	 * Clears the user table and resets paging and action state.
+	 */
 	public void clear() {
 		this.currentResponse = null;
 
@@ -361,7 +406,18 @@ public class UserListComposite extends Composite {
 
 		return (UserListItemResponse) selection.getFirstElement();
 	}
-	
+
+	/**
+	 * Replaces an existing user item in the current table contents and refreshes
+	 * the viewer.
+	 *
+	 * <p>
+	 * If the updated user is currently selected, the selection is preserved
+	 * after refresh.
+	 * </p>
+	 *
+	 * @param updated updated user item
+	 */
 	public void replaceUser(UserListItemResponse updated) {
 		if (currentResponse == null || currentResponse.users() == null) {
 			return;
@@ -381,7 +437,16 @@ public class UserListComposite extends Composite {
 			}
 		}
 	}
-	
+
+	/**
+	 * Selects the user with the specified identifier.
+	 *
+	 * <p>
+	 * If the user cannot be found, the current selection is cleared.
+	 * </p>
+	 *
+	 * @param userId user identifier to select
+	 */
 	public void selectUser(Long userId) {
 		if (userId == null) {
 			viewer.setSelection(StructuredSelection.EMPTY);

@@ -18,6 +18,24 @@ import io.github.kkusylabs.useradmin.client.core.api.user.UserListFilter;
 import io.github.kkusylabs.useradmin.client.ui.util.SwtUtil;
 import io.github.kkusylabs.useradmin.client.ui.util.TextUtil;
 
+/**
+ * Composite providing user search and filtering controls.
+ *
+ * <p>
+ * This composite supports filtering users by:
+ * </p>
+ *
+ * <ul>
+ *   <li>search text</li>
+ *   <li>role</li>
+ *   <li>department</li>
+ *   <li>active status</li>
+ * </ul>
+ *
+ * <p>
+ * Filter actions are delegated through {@link UserFilterActions}.
+ * </p>
+ */
 public class UserFilterComposite extends Composite {
 
 	private Text searchText;
@@ -36,6 +54,12 @@ public class UserFilterComposite extends Composite {
 	
 	private List<DepartmentOption> departmentOptions = List.of();
 	
+	/**
+	 * Creates the user filter composite.
+	 *
+	 * @param parent parent composite
+	 * @param style SWT style flags
+	 */
 	public UserFilterComposite(Composite parent, int style) {
 		super(parent, style);
 		createControls();
@@ -103,6 +127,11 @@ public class UserFilterComposite extends Composite {
 		clearButton = SwtUtil.createPushButton(buttons, "Clear");
 	}
 	
+	/**
+	 * Registers callbacks for filter-related actions.
+	 *
+	 * @param actions filter action handler
+	 */
 	public void setActions(UserFilterActions actions) {
 		this.actions = actions;
 	}
@@ -129,6 +158,11 @@ public class UserFilterComposite extends Composite {
 		});
 	}
 	
+	/**
+	 * Sets the available department filter options.
+	 *
+	 * @param departments available department options
+	 */
 	public void setDepartmentOptions(List<DepartmentOption> departments) {
 		this.departmentOptions =
 				departments == null ? List.of() : departments;
@@ -144,6 +178,11 @@ public class UserFilterComposite extends Composite {
 		departmentViewer.getCombo().select(0);
 	}
 	
+	/**
+	 * Returns the currently selected filter values.
+	 *
+	 * @return current user list filter
+	 */
 	public UserListFilter getFilter() {
 		String search = TextUtil.trimToNull(searchText.getText());
 
@@ -170,6 +209,9 @@ public class UserFilterComposite extends Composite {
 				defaultSort());
 	}
 
+	/**
+	 * Clears all filter controls and restores default filter selections.
+	 */
 	public void clear() {
 		searchText.setText("");
 
