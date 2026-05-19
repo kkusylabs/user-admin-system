@@ -560,11 +560,14 @@ This allows:
 # Future Enhancements
 
 * Improve busy/loading state handling during asynchronous REST operations
-* Improve client-side error handling and display more user-friendly validation and API error messages
-* inline field validation feedback
-* advanced table sorting
-* additional automated UI testing
-* optional web frontend using React or Angular
+* Improved client-side error handling and more user-friendly validation and API error messages
+* Password management workflows
+  * administrator password reset support
+  * authenticated user password change support
+* Inline field validation feedback
+* Advanced table sorting
+* Additional automated UI testing
+* Optional future web frontend using React or Angular
 
 # Acknowlegements
 
