@@ -98,6 +98,7 @@ public final class UiApiRunner {
 		private Control control;
 		private Runnable onBefore;
 		private Consumer<T> onSuccess;
+		private Runnable onAfter;
 		private CustomApiErrorHandler customErrorHandler;
 		private String errorTitle;
 		private String fallbackMessage;
@@ -128,6 +129,15 @@ public final class UiApiRunner {
 		 */
 		public ApiRequestBuilder<T> onSuccess(Consumer<T> onSuccess) {
 			this.onSuccess = onSuccess;
+			return this;
+		}
+		
+		/**
+		 * Optional: Logic to run on the UI thread AFTER the background task terminates,
+		 * regardless of success or failure (acts like a 'finally' block).
+		 */
+		public ApiRequestBuilder<T> onAfter(Runnable onAfter) {
+			this.onAfter = onAfter;
 			return this;
 		}
 
@@ -170,21 +180,28 @@ public final class UiApiRunner {
 							return;
 						}
 
-						// 4. Handle Failure
-						if (error != null) {
-							Throwable cause = ApiErrorHandler.unwrap(error);
-
-							if (customErrorHandler != null && customErrorHandler.handle(cause)) {
-								return; // Handled by caller
+						try {
+							// 4. Handle Failure
+							if (error != null) {
+								Throwable cause = ApiErrorHandler.unwrap(error);
+	
+								if (customErrorHandler != null && customErrorHandler.handle(cause)) {
+									return; // Handled by caller
+								}
+	
+								apiErrorHandler.handleDefault(control.getShell(), cause, errorTitle, fallbackMessage);
+								return;
 							}
-
-							apiErrorHandler.handleDefault(control.getShell(), cause, errorTitle, fallbackMessage);
-							return;
-						}
-
-						// 5. Handle Success
-						if (onSuccess != null) {
-							onSuccess.accept(result);
+	
+							// 5. Handle Success
+							if (onSuccess != null) {
+								onSuccess.accept(result);
+							}
+						} finally {
+							// 6. This always executes on UI Thread when work finishes
+							if (onAfter != null) {
+								onAfter.run();
+							}							
 						}
 					}));
 		}

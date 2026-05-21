@@ -144,8 +144,6 @@ public class UserFilterComposite extends Composite {
 		});
 
 		clearButton.addListener(SWT.Selection, e -> {
-			clear();
-
 			if (this.actions != null) {
 				this.actions.clearFilterRequested();
 			}
