@@ -112,14 +112,14 @@ public class UserPart {
 	
 	private int pendingInitialLoads;
 
-
+	
 	/**
 	 * Creates the user administration UI.
 	 *
 	 * @param parent parent composite
 	 */
 	@PostConstruct
-	public void createControls(Composite parent) {	
+	public void createControls(Composite parent) {			
 		parent.setLayout(new GridLayout(1, false));
 
 		userFilterComposite = new UserFilterComposite(parent, SWT.NONE);
@@ -572,8 +572,7 @@ public class UserPart {
 	
 	private void updateUser(long userId, UserPatch patch) {
 
-		apiRunner.task(() ->
-				userApiClient.updateUser(userId, patch.asMap()))
+		apiRunner.task(() -> userApiClient.updateUser(userId, patch.asMap()))
 				.onControl(userDetailsComposite)
 				.onBefore(this::beginApi)
 				.onSuccess(updated -> {
@@ -635,6 +634,9 @@ public class UserPart {
 	private void updateUiEnabledState() {
 		boolean baseEnabled =
 				sessionEnabled && !apiBusy;
+
+		userListComposite.getShell()
+				.setCursor(apiBusy ? userListComposite.getDisplay().getSystemCursor(SWT.CURSOR_WAIT) : null);
 
 		userDetailsComposite.setEnabled(baseEnabled);
 
