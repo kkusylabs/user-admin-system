@@ -3,6 +3,7 @@ package io.github.kkusylabs.useradmin.client.ui.part;
 import org.eclipse.e4.core.di.annotations.Optional;
 import org.eclipse.e4.ui.di.Focus;
 import org.eclipse.e4.ui.di.UIEventTopic;
+import org.eclipse.e4.ui.di.UISynchronize;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
@@ -70,6 +71,9 @@ public class DepartmentPart {
 	
 	@Inject
 	private SessionTokenStore tokenStore;
+	
+	@Inject
+	private UISynchronize uiSync;
 
 	private DepartmentListItemResponse selectedDepartment;
 
@@ -179,24 +183,26 @@ public class DepartmentPart {
 	@Inject
 	@Optional
 	public void onLoginSuccess(@UIEventTopic(AppTopics.LOGIN_SUCCESS) String username) {
-		sessionEnabled = true;
-
-		apiBusy = false;
-		detailsEditing = false;
-		selectedDepartment = null;
-		updateUiEnabledState();
-		loadDepartments();
+		uiSync.asyncExec(() -> {
+			sessionEnabled = true;
+			apiBusy = false;
+			detailsEditing = false;
+			selectedDepartment = null;
+			updateUiEnabledState();
+			loadDepartments();
+		});
 	}
 	
 	@Inject
 	@Optional
-	public void onAuthExpired(
-			@UIEventTopic(AppTopics.AUTH_EXPIRED) Object event) {
-		sessionEnabled = false;
-		apiBusy = false;
-		detailsEditing = false;
-		clearDepartmentUi();
-		updateUiEnabledState();
+	public void onAuthExpired(@UIEventTopic(AppTopics.AUTH_EXPIRED) Object event) {
+		uiSync.asyncExec(() -> {
+			sessionEnabled = false;
+			apiBusy = false;
+			detailsEditing = false;
+			clearDepartmentUi();
+			updateUiEnabledState();
+		});
 	}
 
 	private void loadDepartments() {
