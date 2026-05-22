@@ -420,6 +420,9 @@ public class DepartmentPart {
 		boolean baseEnabled =
 				sessionEnabled && !apiBusy;
 
+		departmentListComposite.getShell()
+				.setCursor(apiBusy ? departmentListComposite.getDisplay().getSystemCursor(SWT.CURSOR_WAIT) : null);
+		
 		departmentDetailsComposite.setEnabled(baseEnabled);
 
 		departmentListComposite.setEnabled(
