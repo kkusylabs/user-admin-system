@@ -5,6 +5,7 @@ import java.util.List;
 import org.eclipse.e4.core.di.annotations.Optional;
 import org.eclipse.e4.ui.di.Focus;
 import org.eclipse.e4.ui.di.UIEventTopic;
+import org.eclipse.e4.ui.di.UISynchronize;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
@@ -86,6 +87,9 @@ public class UserPart {
 	private UserApiClient userApiClient;
 	
 	@Inject DepartmentApiClient departmentApiClient;
+	
+	@Inject
+	private UISynchronize uiSync;
 	
 	private int currentPage = 0;
 	
@@ -179,7 +183,7 @@ public class UserPart {
 					return;
 				}
 				
-				handleAddUserRequested();
+				beginCreateUser();
 			}
 
 			@Override
@@ -188,7 +192,7 @@ public class UserPart {
 					return;
 				}
 				
-				handleDeleteUserRequested(user);
+				deleteUser(user);
 			}
 
 			@Override
@@ -207,7 +211,7 @@ public class UserPart {
 					return;
 				}
 				
-				handleFirstPageRequested();
+				goToFirstPage();
 			}
 			
 			@Override
@@ -216,7 +220,7 @@ public class UserPart {
 					return;
 				}
 				
-				handlePreviousPageRequested();
+				goToPreviousPage();
 			}
 
 			@Override
@@ -225,7 +229,7 @@ public class UserPart {
 					return;
 				}
 				
-				handleNextPageRequested();
+				goToNextPage();
 			}
 
 			@Override
@@ -234,7 +238,7 @@ public class UserPart {
 					return;
 				}
 				
-				handleLastPageRequested();
+				goToLastPage();
 			}
 			
 			public void pageSizeChanged(int pageSize) {
@@ -242,7 +246,7 @@ public class UserPart {
 					return;
 				}
 				
-				handlePageSizeChanged(pageSize);
+				changePageSize(pageSize);
 			}
 		});		
 	}
@@ -251,22 +255,22 @@ public class UserPart {
 		userDetailsComposite.setActions(new UserDetailsActions() {
 			@Override
 			public void editUserRequested(UserListItemResponse user) {
-				handleEditUserRequested(user);
+				beginEditUser(user);
 			}
 
 			@Override
 			public void createUserRequested(CreateUserRequest request) {
-				handleCreateUserRequested(request);
+				createUser(request);
 			}
 			
 			@Override 
 			public void updateUserRequested(long userId, UserPatch patch) {
-				handleUpdateUserRequested(userId, patch);
+				updateUser(userId, patch);
 			}
 
 			@Override
 			public void cancelRequested() {
-				restoreSelectedUserView();
+				cancelEditing();
 			}
 		});		
 	}
@@ -280,27 +284,30 @@ public class UserPart {
 	@Inject
 	@Optional
 	public void onLoginSuccess(@UIEventTopic(AppTopics.LOGIN_SUCCESS) String username) {
-		sessionEnabled = true;
-		detailsEditing = false;
-		
-		currentPage = 0;
-		currentResponse = null;
-		selectedUser = null;
-		
-		updateUiEnabledState();
-		loadInitialData();
+		uiSync.asyncExec(() -> {
+			sessionEnabled = true;
+			detailsEditing = false;
+
+			currentPage = 0;
+			currentResponse = null;
+			selectedUser = null;
+
+			updateUiEnabledState();
+			loadInitialData();
+		});
 	}
 	
 	@Inject
 	@Optional
-	public void onAuthExpired(
-			@UIEventTopic(AppTopics.AUTH_EXPIRED) Object event) {
-		sessionEnabled = false;
-		apiBusy = false;
-		detailsEditing = false;
-		clearUserUi();
-		updateUiEnabledState();
-	}	
+	public void onAuthExpired(@UIEventTopic(AppTopics.AUTH_EXPIRED) Object event) {
+		uiSync.asyncExec(() -> {
+			sessionEnabled = false;
+			apiBusy = false;
+			detailsEditing = false;
+			clearUserUi();
+			updateUiEnabledState();
+		});
+	}
 	
 	private void loadInitialData() {
 		clearUserUi();
@@ -387,9 +394,7 @@ public class UserPart {
 	
 	private void showUsers(UserListResponse response) {
 		this.currentResponse = response;
-
 		userListComposite.setUsers(response);
-		
 		reconcileSelectedUser(response);
 	}
 	
@@ -429,7 +434,7 @@ public class UserPart {
 				.orElse(null);
 	}
 	
-	private void handleAddUserRequested() {
+	private void beginCreateUser() {
 		apiRunner.task(userApiClient::getCreateUserCapabilities)
 			.onControl(userDetailsComposite)
 			.onBefore(this::beginApi)
@@ -442,7 +447,7 @@ public class UserPart {
 			.execute();
 	}
 	
-	private void handleDeleteUserRequested(UserListItemResponse user) {
+	private void deleteUser(UserListItemResponse user) {
 
 		boolean confirmed =
 				MessageDialog.openConfirm(
@@ -477,31 +482,29 @@ public class UserPart {
 	}
 	
 	private void selectUser(UserListItemResponse user) {
-
 		if (suppressSelectionEvents) {
 			return;
 		}
 
 		selectedUser = user;
-		setDetailsEditing(false);
-		userDetailsComposite.showViewMode(user);
+		showSelectedUser();
 	}
 	
-	private void handleFirstPageRequested() {
+	private void goToFirstPage() {
 		if (currentPage > 0) {
 			currentPage = 0;
 			reloadUsers();
 		}		
 	}
 	
-	private void handlePreviousPageRequested() {
+	private void goToPreviousPage() {
 		if (currentPage > 0) {
 			currentPage--;
 			reloadUsers();
 		}
 	}
 	
-	private void handleNextPageRequested() {
+	private void goToNextPage() {
 		if (currentResponse == null) {
 			return;
 		}
@@ -512,7 +515,7 @@ public class UserPart {
 		}
 	}
 	
-	private void handleLastPageRequested() {
+	private void goToLastPage() {
 		if (currentResponse == null) {
 			return;
 		}
@@ -522,13 +525,13 @@ public class UserPart {
 		reloadUsers();
 	}
 	
-	private void handlePageSizeChanged(int pageSize) {
+	private void changePageSize(int pageSize) {
 		this.pageSize = pageSize;
 		this.currentPage = 0;
 		reloadUsers();
 	}
 	
-	private void handleEditUserRequested(UserListItemResponse item) {
+	private void beginEditUser(UserListItemResponse item) {
 
 		apiRunner.task(() ->
 				userApiClient.getUserEditData(item.user().id()))
@@ -545,7 +548,7 @@ public class UserPart {
 				.execute();
 	}
 	
-	private void handleCreateUserRequested(CreateUserRequest request) {
+	private void createUser(CreateUserRequest request) {
 
 		apiRunner.task(() -> userApiClient.createUser(request))
 				.onControl(userDetailsComposite)
@@ -567,7 +570,7 @@ public class UserPart {
 				.execute();
 	}
 	
-	private void handleUpdateUserRequested(long userId, UserPatch patch) {
+	private void updateUser(long userId, UserPatch patch) {
 
 		apiRunner.task(() ->
 				userApiClient.updateUser(userId, patch.asMap()))
@@ -597,12 +600,16 @@ public class UserPart {
 						"Could not update user.")
 				.execute();
 	}
-	
-	private void restoreSelectedUserView() {
-		setDetailsEditing(false);
 		
+	private void cancelEditing() {
+		setDetailsEditing(false);
+		showSelectedUser();		
+	}
+	
+	private void showSelectedUser() {
 		if (selectedUser != null) {
-			userDetailsComposite.showViewMode(selectedUser);
+			userDetailsComposite.showViewMode(
+					selectedUser);
 			return;
 		}
 
