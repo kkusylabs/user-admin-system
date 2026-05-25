@@ -5,7 +5,7 @@ import org.eclipse.e4.ui.di.UIEventTopic;
 import org.eclipse.e4.ui.di.UISynchronize;
 import org.eclipse.e4.ui.model.application.MApplication;
 import org.eclipse.e4.ui.model.application.ui.basic.MWindow;
-import org.eclipse.e4.ui.workbench.UIEvents; // Make sure to import this
+import org.eclipse.e4.ui.workbench.UIEvents;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Shell;
 
@@ -28,16 +28,17 @@ public class AppStartupAddon {
 	@Inject
 	private LoginService loginService;
 
-	private boolean loginShowing = false;
+	private boolean loginRequested;
+	private boolean loginShowing;
 
 	/**
-	 * Handles the initial application startup event. The shell is guaranteed to
-	 * exist at this point.
+	 * Handles the initial application startup event.
 	 */
 	@Inject
 	@Optional
-	public void onAppStartupComplete(@UIEventTopic(UIEvents.UILifeCycle.APP_STARTUP_COMPLETE) Object event) {
-		triggerDeferredLogin();
+	public void onAppStartupComplete(
+			@UIEventTopic(UIEvents.UILifeCycle.APP_STARTUP_COMPLETE) Object event) {
+		scheduleLogin();
 	}
 
 	/**
@@ -46,7 +47,7 @@ public class AppStartupAddon {
 	@Inject
 	@Optional
 	public void onAuthExpired(@UIEventTopic(AppTopics.AUTH_EXPIRED) Object ignored) {
-		triggerDeferredLogin();
+		scheduleLogin();
 	}
 
 	/**
@@ -55,20 +56,37 @@ public class AppStartupAddon {
 	@Inject
 	@Optional
 	public void onLogout(@UIEventTopic(AppTopics.LOGOUT) Object ignored) {
-		triggerDeferredLogin();
+		scheduleLogin();
 	}
 
 	/**
-	 * Safely queues the login dialog to the end of the SWT event loop. * For
-	 * startup: Gives the window a split second to finish rendering. For
-	 * logout/expired events: Allows concurrent UI listeners to wipe their widgets
-	 * first.
+	 * Queues the login dialog to run after the current SWT event finishes.
+	 *
+	 * <p>
+	 * This lets startup, logout, and authentication-expired listeners finish
+	 * updating the UI before the modal login dialog opens.
+	 * </p>
 	 */
-	private void triggerDeferredLogin() {
-		Shell shell = getShell();
-		if (shell != null && !shell.isDisposed()) {
-			uiSync.asyncExec(() -> showLoginIfNeeded(shell));
+	private void scheduleLogin() {
+		if (loginRequested || loginShowing) {
+			return;
 		}
+
+		Shell shell = getShell();
+
+		if (shell == null || shell.isDisposed()) {
+			return;
+		}
+
+		loginRequested = true;
+
+		uiSync.asyncExec(() -> {
+			loginRequested = false;
+
+			if (!shell.isDisposed()) {
+				showLoginIfNeeded(shell);
+			}
+		});
 	}
 
 	/**
@@ -83,6 +101,7 @@ public class AppStartupAddon {
 
 		try {
 			LoginDialog dialog = new LoginDialog(shell, loginService);
+
 			int result = dialog.open();
 
 			if (result != Window.OK) {
@@ -94,7 +113,9 @@ public class AppStartupAddon {
 	}
 
 	/**
-	 * Returns the primary SWT shell associated with the Eclipse application window.
+	 * Returns the primary SWT shell associated with the application window.
+	 *
+	 * @return application shell, or {@code null} if unavailable
 	 */
 	private Shell getShell() {
 		if (application.getChildren().isEmpty()) {
@@ -102,11 +123,13 @@ public class AppStartupAddon {
 		}
 
 		MWindow window = application.getChildren().get(0);
+
 		if (window == null) {
 			return null;
 		}
 
 		Object widget = window.getWidget();
+
 		if (widget instanceof Shell shell) {
 			return shell;
 		}
