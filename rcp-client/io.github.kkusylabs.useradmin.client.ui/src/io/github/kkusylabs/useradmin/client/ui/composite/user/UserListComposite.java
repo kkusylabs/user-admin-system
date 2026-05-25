@@ -302,7 +302,7 @@ public class UserListComposite extends Composite {
 
 			deleteButton.setEnabled(selected != null && selected.canDelete());
 
-			if (selected != null && actions != null) {
+			if (actions != null) {
 				actions.userSelected(selected);
 			}
 		});
@@ -432,7 +432,6 @@ public class UserListComposite extends Composite {
 			if (existing.user().id().equals(updated.user().id())) {
 				users.set(i, updated);
 				viewer.refresh();
-				viewer.setSelection(new StructuredSelection(updated), true);
 				return;
 			}
 		}

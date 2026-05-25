@@ -137,7 +137,7 @@ public class DepartmentPart {
 					return;
 				}
 				
-				if (canUseDepartmentListActions()) {
+				if (canAcceptDepartmentSelection()) {
 					selectDepartment(department);
 				}
 			}
@@ -272,6 +272,7 @@ public class DepartmentPart {
 					setDetailsEditing(false);
 					selectDepartment(created);
 					loadDepartments();
+
 					showSuccess("Department Created", "Department created successfully.");
 				})
 				.onAfter(this::endApi)
@@ -290,8 +291,9 @@ public class DepartmentPart {
 				.onBefore(this::beginApi)
 				.onSuccess(updated -> {
 					setDetailsEditing(false);
-					departmentListComposite.replaceDepartment(updated);
-					selectDepartmentEverywhere(updated);
+					selectDepartment(updated);
+					replaceAndSelectDepartment(updated);
+					
 					showSuccess("Department Updated", "Department updated successfully.");
 				})
 				.onAfter(this::endApi)
@@ -312,6 +314,7 @@ public class DepartmentPart {
 				.onSuccess(v -> {
 					clearSelectionIfDeleted(department);
 					loadDepartments();
+
 					showSuccess("Department Deleted", "Department deleted successfully.");
 				})
 				.onAfter(this::endApi)
@@ -351,10 +354,14 @@ public class DepartmentPart {
 		}
 	}
 	
-
-	private void cancelEditing() {
-		setDetailsEditing(false);
-		selectDepartment(selectedDepartment);
+	private void replaceAndSelectDepartment(DepartmentListItemResponse updated) {
+		suppressSelectionEvents = true;
+		try {
+			departmentListComposite.replaceDepartment(updated);
+			departmentListComposite.selectDepartment(updated.department().id());
+		} finally {
+			suppressSelectionEvents = false;
+		}
 	}
 
 	private void clearSelectionIfDeleted(DepartmentListItemResponse deleted) {
@@ -363,7 +370,12 @@ public class DepartmentPart {
 			selectDepartmentEverywhere(null);
 		}
 	}
-	
+
+	private void cancelEditing() {
+		setDetailsEditing(false);
+		selectDepartment(selectedDepartment);
+	}
+
 	private void clearDepartmentUi() {
 		selectedDepartment = null;
 		departmentListComposite.clear();
@@ -415,6 +427,10 @@ public class DepartmentPart {
 		if (!departmentDetailsComposite.isDisposed()) {
 			departmentDetailsComposite.setEnabled(baseEnabled);
 		}
+	}
+	
+	private boolean canAcceptDepartmentSelection() {
+		return sessionEnabled && !detailsEditing;
 	}
 
 	private boolean canUseDepartmentListActions() {

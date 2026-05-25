@@ -5,7 +5,6 @@ import java.util.List;
 import org.eclipse.e4.core.di.annotations.Optional;
 import org.eclipse.e4.ui.di.Focus;
 import org.eclipse.e4.ui.di.UIEventTopic;
-import org.eclipse.e4.ui.di.UISynchronize;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
@@ -75,51 +74,40 @@ import jakarta.inject.Inject;
 public class UserPart {
 
 	private UserListComposite userListComposite;
-	
 	private UserFilterComposite userFilterComposite;
-	
 	private UserDetailsComposite userDetailsComposite;
-	
+
 	@Inject
 	private UiApiRunner apiRunner;
-	
+
 	@Inject
 	private UserApiClient userApiClient;
-	
-	@Inject DepartmentApiClient departmentApiClient;
-	
+
 	@Inject
-	private UISynchronize uiSync;
-	
-	private int currentPage = 0;
-	
-	private int pageSize = 25;
-	
-	private UserListResponse currentResponse;
-	
-	private UserListItemResponse selectedUser;
-	
-	private boolean suppressSelectionEvents;
-	
+	private DepartmentApiClient departmentApiClient;
+
 	@Inject
 	private SessionTokenStore tokenStore;
-	
-	private boolean sessionEnabled;
-	
-	private boolean apiBusy;
-	
-	private boolean detailsEditing;
-	
-	private int pendingInitialLoads;
 
-	
+	private int currentPage = 0;
+	private int pageSize = 25;
+
+	private UserListResponse currentResponse;
+	private UserListItemResponse selectedUser;
+
+	private boolean suppressSelectionEvents;
+	private boolean sessionEnabled;
+	private boolean detailsEditing;
+
+	private int apiBusyCount;
+
 	/**
 	 * Creates the user administration UI.
 	 *
 	 * @param parent parent composite
 	 */
 	@PostConstruct
-	public void createControls(Composite parent) {			
+	public void createControls(Composite parent) {
 		parent.setLayout(new GridLayout(1, false));
 
 		userFilterComposite = new UserFilterComposite(parent, SWT.NONE);
@@ -134,147 +122,141 @@ public class UserPart {
 		sash.setWeights(new int[] { 55, 45 });
 
 		wireEvents();
-		
+
 		sessionEnabled = tokenStore.hasToken();
-		updateUiEnabledState();;
-		
+		updateUiEnabledState();
+
 		if (sessionEnabled) {
 			loadInitialData();
 		}
 	}
-	
+
 	private void wireEvents() {
 		wireUserFilterActions();
 		wireUserListActions();
 		wireUserDetailsActions();
 	}
-	
+
 	private void wireUserFilterActions() {
 		userFilterComposite.setActions(new UserFilterActions() {
 
 			@Override
 			public void searchRequested(UserListFilter filter) {
-				if (!canUseListAndFilterActions()) {
-					return;
+				if (canUseListAndFilterActions()) {
+					currentPage = 0;
+					loadUsers();
 				}
-				
-				currentPage = 0;
-				reloadUsers();
 			}
 
 			@Override
 			public void clearFilterRequested() {
-				if (!canUseListAndFilterActions()) {
-					return;
+				if (canUseListAndFilterActions()) {
+					userFilterComposite.clear();
+					currentPage = 0;
+					loadUsers();
 				}
-				
-				userFilterComposite.clear();
-				currentPage = 0;
-				reloadUsers();
 			}
-		});		
+		});
 	}
-	
+
 	private void wireUserListActions() {
 		userListComposite.setActions(new UserListActions() {
+
 			@Override
 			public void addUserRequested() {
-				if (!canUseListAndFilterActions()) {
-					return;
+				if (canUseListAndFilterActions()) {
+					beginCreateUser();
 				}
-				
-				beginCreateUser();
 			}
 
 			@Override
 			public void deleteUserRequested(UserListItemResponse user) {
-				if (!canUseListAndFilterActions()) {
-					return;
+				if (canUseListAndFilterActions()) {
+					deleteUser(user);
 				}
-				
-				deleteUser(user);
 			}
 
 			@Override
 			public void userSelected(UserListItemResponse user) {
-				if (!canUseListAndFilterActions()) {
+				if (suppressSelectionEvents) {
 					return;
 				}
-				
-				selectUser(user);
+
+				if (canAcceptUserSelection()) {
+					selectUser(user);
+				}
 			}
-			
 
 			@Override
 			public void firstPageRequested() {
-				if (!canUseListAndFilterActions()) {
-					return;
+				if (canUseListAndFilterActions()) {
+					goToFirstPage();
 				}
-				
-				goToFirstPage();
 			}
-			
+
 			@Override
 			public void previousPageRequested() {
-				if (!canUseListAndFilterActions()) {
-					return;
+				if (canUseListAndFilterActions()) {
+					goToPreviousPage();
 				}
-				
-				goToPreviousPage();
 			}
 
 			@Override
 			public void nextPageRequested() {
-				if (!canUseListAndFilterActions()) {
-					return;
+				if (canUseListAndFilterActions()) {
+					goToNextPage();
 				}
-				
-				goToNextPage();
 			}
 
 			@Override
 			public void lastPageRequested() {
-				if (!canUseListAndFilterActions()) {
-					return;
+				if (canUseListAndFilterActions()) {
+					goToLastPage();
 				}
-				
-				goToLastPage();
 			}
-			
+
+			@Override
 			public void pageSizeChanged(int pageSize) {
-				if (!canUseListAndFilterActions()) {
-					return;
+				if (canUseListAndFilterActions()) {
+					changePageSize(pageSize);
 				}
-				
-				changePageSize(pageSize);
 			}
-		});		
+		});
 	}
-	
+
 	private void wireUserDetailsActions() {
 		userDetailsComposite.setActions(new UserDetailsActions() {
+
 			@Override
 			public void editUserRequested(UserListItemResponse user) {
-				beginEditUser(user);
+				if (canUseUserDetailsActions()) {
+					beginEditUser(user);
+				}
 			}
 
 			@Override
 			public void createUserRequested(CreateUserRequest request) {
-				createUser(request);
+				if (canUseUserDetailsActions()) {
+					createUser(request);
+				}
 			}
-			
-			@Override 
+
+			@Override
 			public void updateUserRequested(long userId, UserPatch patch) {
-				updateUser(userId, patch);
+				if (canUseUserDetailsActions()) {
+					updateUser(userId, patch);
+				}
 			}
 
 			@Override
 			public void cancelRequested() {
-				cancelEditing();
+				if (canUseUserDetailsActions()) {
+					cancelEditing();
+				}
 			}
-		});		
+		});
 	}
-	
+
 	/**
 	 * Handles successful authentication events by loading initial user and
 	 * department data.
@@ -284,59 +266,57 @@ public class UserPart {
 	@Inject
 	@Optional
 	public void onLoginSuccess(@UIEventTopic(AppTopics.LOGIN_SUCCESS) String username) {
-		uiSync.asyncExec(() -> {
-			sessionEnabled = true;
-			detailsEditing = false;
+		sessionEnabled = true;
+		apiBusyCount = 0;
+		detailsEditing = false;
+		suppressSelectionEvents = false;
 
-			currentPage = 0;
-			currentResponse = null;
-			selectedUser = null;
+		currentPage = 0;
+		currentResponse = null;
+		selectedUser = null;
 
-			updateUiEnabledState();
-			loadInitialData();
-		});
+		updateUiEnabledState();
+		loadInitialData();
 	}
-	
+
+	/**
+	 * Resets the part after authentication expires.
+	 *
+	 * <p>
+	 * Clears workflow state, removes loaded user data, and disables
+	 * authenticated UI actions until a new login occurs.
+	 * </p>
+	 *
+	 * @param event authentication expiration event payload
+	 */
 	@Inject
 	@Optional
 	public void onAuthExpired(@UIEventTopic(AppTopics.AUTH_EXPIRED) Object event) {
-		uiSync.asyncExec(() -> {
-			sessionEnabled = false;
-			apiBusy = false;
-			detailsEditing = false;
-			clearUserUi();
-			updateUiEnabledState();
-		});
+		sessionEnabled = false;
+		apiBusyCount = 0;
+		detailsEditing = false;
+		suppressSelectionEvents = false;
+
+		clearUserUi();
+		updateUiEnabledState();
 	}
-	
+
 	private void loadInitialData() {
 		clearUserUi();
-		apiBusy = true;
-		updateUiEnabledState();
-		pendingInitialLoads = 2;
-		
 		loadDepartments();
-		loadInitialUsers();
+		loadUsers();
 	}
-	
-	private void initialLoadCompleted() {
-		pendingInitialLoads--;
 
-		if (pendingInitialLoads <= 0) {
-			apiBusy = false;
-			updateUiEnabledState();
-		}
-	}
-	
 	private void loadDepartments() {
-		apiRunner.task(() -> departmentApiClient.getDepartments())
+		apiRunner.task(departmentApiClient::getDepartments)
 				.onControl(userFilterComposite)
+				.onBefore(this::beginApi)
 				.onSuccess(this::initializeDepartments)
-				.onAfter(this::initialLoadCompleted)
+				.onAfter(this::endApi)
 				.onError("Load Failed", "Could not load department options.")
 				.execute();
 	}
-	
+
 	private void initializeDepartments(DepartmentListResponse response) {
 		List<DepartmentOption> options =
 				response == null || response.departments() == null
@@ -353,75 +333,50 @@ public class UserPart {
 
 		userFilterComposite.setDepartmentOptions(options);
 	}
-	
-	private String formatDepartmentName(
-			DepartmentDetailsResponse department) {
 
-		if (department.active()) {
-			return department.name();
-		}
+	private String formatDepartmentName(DepartmentDetailsResponse department) {
+		return department.active()
+				? department.name()
+				: department.name() + " (inactive)";
+	}
 
-		return department.name() + " (inactive)";
-	}
-	
-	private void loadInitialUsers() {
-		loadUsers(null, this::initialLoadCompleted);
-	}
-	
-	private void reloadUsers() {
-		loadUsers(this::beginApi, this::endApi);
-	}
-	
-	private void loadUsers(Runnable before, Runnable after) {
-
+	private void loadUsers() {
 		UserListFilter filter = userFilterComposite.getFilter();
 
-		var request = apiRunner.task(() -> userApiClient.getUsers(currentPage, pageSize, filter))
+		apiRunner.task(() -> userApiClient.getUsers(currentPage, pageSize, filter))
 				.onControl(userListComposite)
+				.onBefore(this::beginApi)
 				.onSuccess(this::showUsers)
-				.onError("Load Failed", "Could not fetch user details.");
-
-		if (before != null) {
-			request.onBefore(before);
-		}
-		
-		if (after != null) {
-			request.onAfter(after);	
-		}
-
-		request.execute();
+				.onAfter(this::endApi)
+				.onError("Load Failed", "Could not fetch user details.")
+				.execute();
 	}
-	
+
 	private void showUsers(UserListResponse response) {
-		this.currentResponse = response;
+		currentResponse = response;
 		userListComposite.setUsers(response);
 		reconcileSelectedUser(response);
 	}
-	
+
 	private void reconcileSelectedUser(UserListResponse response) {
-		if (selectedUser == null) {
-			userDetailsComposite.clear();
+		Long selectedId = selectedUserId();
+
+		if (selectedId == null) {
+			selectUserEverywhere(null);
 			return;
 		}
 
-		UserListItemResponse refreshed =
-				findUser(response, selectedUser.user().id());
-
-		if (refreshed == null) {
-			selectedUser = null;
-			userDetailsComposite.clear();
-			return;
-		}
-
-		selectedUser = refreshed;
-		userListComposite.selectUser(refreshed.user().id());
-		userDetailsComposite.showViewMode(refreshed);
+		UserListItemResponse refreshed = findUser(response, selectedId);
+		selectUserEverywhere(refreshed);
 	}
-	
-	private UserListItemResponse findUser(
-			UserListResponse response,
-			Long userId) {
 
+	private Long selectedUserId() {
+		return selectedUser == null
+				? null
+				: selectedUser.user().id();
+	}
+
+	private UserListItemResponse findUser(UserListResponse response, Long userId) {
 		if (response == null || response.users() == null || userId == null) {
 			return null;
 		}
@@ -433,108 +388,26 @@ public class UserPart {
 				.findFirst()
 				.orElse(null);
 	}
-	
+
 	private void beginCreateUser() {
+		selectedUser = null;
+
 		apiRunner.task(userApiClient::getCreateUserCapabilities)
-			.onControl(userDetailsComposite)
-			.onBefore(this::beginApi)
-			.onSuccess(capabilities -> {
-				userDetailsComposite.showCreateMode(capabilities);
-				setDetailsEditing(true);
-			})
-			.onAfter(this::endApi)
-			.onError("Create Failed", "Could not prepare create-user form.")
-			.execute();
-	}
-	
-	private void deleteUser(UserListItemResponse user) {
-
-		boolean confirmed =
-				MessageDialog.openConfirm(
-						userListComposite.getShell(),
-						"Delete User",
-						"Delete user '" +
-								user.user().username() +
-								"'?");
-
-		if (!confirmed) {
-			return;
-		}
-
-		apiRunner.task(() ->
-				userApiClient.deleteUser(user.user().id()))
-				.onControl(userListComposite)
+				.onControl(userDetailsComposite)
 				.onBefore(this::beginApi)
-				.onSuccess(v -> {
-					userDetailsComposite.clear();
-					reloadUsers();
-
-					MessageDialog.openInformation(
-							userListComposite.getShell(),
-							"User Deleted",
-							"User deleted successfully.");
+				.onSuccess(capabilities -> {
+					userDetailsComposite.showCreateMode(capabilities);
+					setDetailsEditing(true);
 				})
 				.onAfter(this::endApi)
-				.onError(
-						"Delete Failed",
-						"Could not delete user.")
+				.onError("Create Failed", "Could not prepare create-user form.")
 				.execute();
 	}
-	
-	private void selectUser(UserListItemResponse user) {
-		if (suppressSelectionEvents) {
-			return;
-		}
 
-		selectedUser = user;
-		showSelectedUser();
-	}
-	
-	private void goToFirstPage() {
-		if (currentPage > 0) {
-			currentPage = 0;
-			reloadUsers();
-		}		
-	}
-	
-	private void goToPreviousPage() {
-		if (currentPage > 0) {
-			currentPage--;
-			reloadUsers();
-		}
-	}
-	
-	private void goToNextPage() {
-		if (currentResponse == null) {
-			return;
-		}
-
-		if (!currentResponse.users().last()) {
-			currentPage++;
-			reloadUsers();
-		}
-	}
-	
-	private void goToLastPage() {
-		if (currentResponse == null) {
-			return;
-		}
-
-		currentPage = Math.max(currentResponse.users().totalPages() - 1, 0);
-
-		reloadUsers();
-	}
-	
-	private void changePageSize(int pageSize) {
-		this.pageSize = pageSize;
-		this.currentPage = 0;
-		reloadUsers();
-	}
-	
 	private void beginEditUser(UserListItemResponse item) {
+		selectedUser = item;
 
-		apiRunner.task(() ->
-				userApiClient.getUserEditData(item.user().id()))
+		apiRunner.task(() -> userApiClient.getUserEditData(item.user().id()))
 				.onControl(userDetailsComposite)
 				.onBefore(this::beginApi)
 				.onSuccess(response -> {
@@ -542,124 +415,226 @@ public class UserPart {
 					setDetailsEditing(true);
 				})
 				.onAfter(this::endApi)
-				.onError(
-						"Load Failed",
-						"Could not load user edit details.")
+				.onError("Load Failed", "Could not load user edit details.")
 				.execute();
 	}
-	
-	private void createUser(CreateUserRequest request) {
 
+	private void createUser(CreateUserRequest request) {
 		apiRunner.task(() -> userApiClient.createUser(request))
 				.onControl(userDetailsComposite)
 				.onBefore(this::beginApi)
 				.onSuccess(created -> {
-					selectedUser = created;
-					userDetailsComposite.showViewMode(created);
 					setDetailsEditing(false);
-					reloadUsers();
-					MessageDialog.openInformation(
-							userDetailsComposite.getShell(),
-							"User Created",
-							"User created successfully.");
+					selectUser(created);
+					loadUsers();
+					
+					showSuccess("User Created", "User created successfully.");
 				})
 				.onAfter(this::endApi)
-				.onError(
-						"Create Failed",
-						"Could not create user.")
+				.onError("Create Failed", "Could not create user.")
 				.execute();
 	}
-	
-	private void updateUser(long userId, UserPatch patch) {
 
+	private void updateUser(long userId, UserPatch patch) {
 		apiRunner.task(() -> userApiClient.updateUser(userId, patch.asMap()))
 				.onControl(userDetailsComposite)
 				.onBefore(this::beginApi)
 				.onSuccess(updated -> {
-					selectedUser = updated;
-					userDetailsComposite.showViewMode(updated);
 					setDetailsEditing(false);
-					suppressSelectionEvents = true;
+					selectUser(updated);
+					replaceAndSelectUser(updated);
 					
-					try {
-						userListComposite.replaceUser(updated);
-						userListComposite.selectUser(updated.user().id());
-					} finally {
-						suppressSelectionEvents = false;
-					}
-
-					MessageDialog.openInformation(
-							userDetailsComposite.getShell(),
-							"User Updated",
-							"User updated successfully.");
+					showSuccess("User Updated", "User updated successfully.");
 				})
 				.onAfter(this::endApi)
-				.onError(
-						"Update Failed",
-						"Could not update user.")
+				.onError("Update Failed", "Could not update user.")
 				.execute();
 	}
-		
-	private void cancelEditing() {
-		setDetailsEditing(false);
-		showSelectedUser();		
-	}
-	
-	private void showSelectedUser() {
-		if (selectedUser != null) {
-			userDetailsComposite.showViewMode(
-					selectedUser);
+
+	private void deleteUser(UserListItemResponse user) {
+		if (!confirmDeleteUser(user)) {
 			return;
 		}
 
-		userDetailsComposite.clear();
+		apiRunner.task(() -> userApiClient.deleteUser(user.user().id()))
+				.onControl(userListComposite)
+				.onBefore(this::beginApi)
+				.onSuccess(v -> {
+					clearSelectionIfDeleted(user);
+					loadUsers();
+
+					showSuccess("User Deleted", "User deleted successfully.");
+				})
+				.onAfter(this::endApi)
+				.onError("Delete Failed", "Could not delete user.")
+				.execute();
+	}
+
+	private boolean confirmDeleteUser(UserListItemResponse user) {
+		return MessageDialog.openConfirm(
+				userListComposite.getShell(),
+				"Delete User",
+				"Delete user '" + user.user().username() + "'?");
+	}
+
+	private void selectUser(UserListItemResponse user) {
+		selectedUser = user;
+
+		if (user == null) {
+			userDetailsComposite.clear();
+			return;
+		}
+
+		userDetailsComposite.showViewMode(user);
+	}
+
+	private void selectUserEverywhere(UserListItemResponse user) {
+		selectUser(user);
+		selectUserInList(user == null ? null : user.user().id());
+	}
+
+	private void selectUserInList(Long userId) {
+		suppressSelectionEvents = true;
+		try {
+			userListComposite.selectUser(userId);
+		} finally {
+			suppressSelectionEvents = false;
+		}
 	}
 	
-	private void setDetailsEditing(boolean editing) {
-		this.detailsEditing = editing;
-		updateUiEnabledState();
+	private void replaceAndSelectUser(UserListItemResponse updated) {
+		suppressSelectionEvents = true;
+		try {
+			userListComposite.replaceUser(updated);
+			userListComposite.selectUser(updated.user().id());
+		} finally {
+			suppressSelectionEvents = false;
+		}
 	}
 
-
-	private void beginApi() {
-		apiBusy = true;
-		updateUiEnabledState();
+	private void clearSelectionIfDeleted(UserListItemResponse deleted) {
+		if (selectedUser != null &&
+				selectedUser.user().id().equals(deleted.user().id())) {
+			selectUserEverywhere(null);
+		}
 	}
 
-	private void endApi() {
-		apiBusy = false;
-		updateUiEnabledState();
+	private void cancelEditing() {
+		setDetailsEditing(false);
+		selectUser(selectedUser);
 	}
-	
-	private void updateUiEnabledState() {
-		boolean baseEnabled =
-				sessionEnabled && !apiBusy;
 
-		userListComposite.getShell()
-				.setCursor(apiBusy ? userListComposite.getDisplay().getSystemCursor(SWT.CURSOR_WAIT) : null);
-
-		userDetailsComposite.setEnabled(baseEnabled);
-
-		userFilterComposite.setEnabled(
-				baseEnabled && !detailsEditing);
-
-		userListComposite.setEnabled(
-				baseEnabled && !detailsEditing);
+	private void goToFirstPage() {
+		if (currentPage > 0) {
+			currentPage = 0;
+			loadUsers();
+		}
 	}
-	
-	private boolean canUseListAndFilterActions() {
-		return sessionEnabled && !apiBusy && !detailsEditing;
+
+	private void goToPreviousPage() {
+		if (currentPage > 0) {
+			currentPage--;
+			loadUsers();
+		}
+	}
+
+	private void goToNextPage() {
+		if (currentResponse != null && !currentResponse.users().last()) {
+			currentPage++;
+			loadUsers();
+		}
+	}
+
+	private void goToLastPage() {
+		if (currentResponse == null) {
+			return;
+		}
+
+		currentPage = Math.max(currentResponse.users().totalPages() - 1, 0);
+		loadUsers();
+	}
+
+	private void changePageSize(int pageSize) {
+		this.pageSize = pageSize;
+		this.currentPage = 0;
+		loadUsers();
 	}
 
 	private void clearUserUi() {
 		currentPage = 0;
 		currentResponse = null;
 		selectedUser = null;
+
 		userFilterComposite.clear();
 		userListComposite.clear();
 		userDetailsComposite.clear();
 	}
+
+	private void showSuccess(String title, String message) {
+		MessageDialog.openInformation(
+				userDetailsComposite.getShell(),
+				title,
+				message);
+	}
+
+	private void setDetailsEditing(boolean editing) {
+		detailsEditing = editing;
+		updateUiEnabledState();
+	}
+
+	private void beginApi() {
+		apiBusyCount++;
+		updateUiEnabledState();
+	}
+
+	private void endApi() {
+		apiBusyCount = Math.max(0, apiBusyCount - 1);
+		updateUiEnabledState();
+	}
+
+	private boolean isApiBusy() {
+		return apiBusyCount > 0;
+	}
+
+	private void updateUiEnabledState() {
+		boolean baseEnabled = sessionEnabled && !isApiBusy();
+
+		if (userListComposite == null ||
+				userFilterComposite == null ||
+				userDetailsComposite == null) {
+			return;
+		}
+
+		if (!userListComposite.isDisposed()) {
+			userListComposite.getShell()
+					.setCursor(isApiBusy()
+							? userListComposite.getDisplay().getSystemCursor(SWT.CURSOR_WAIT)
+							: null);
+
+			userListComposite.setEnabled(baseEnabled && !detailsEditing);
+		}
+
+		if (!userFilterComposite.isDisposed()) {
+			userFilterComposite.setEnabled(baseEnabled && !detailsEditing);
+		}
+
+		if (!userDetailsComposite.isDisposed()) {
+			userDetailsComposite.setEnabled(baseEnabled);
+		}
+	}
 	
+	private boolean canAcceptUserSelection() {
+		return sessionEnabled && !detailsEditing;
+	}
+
+	private boolean canUseListAndFilterActions() {
+		return sessionEnabled && !isApiBusy() && !detailsEditing;
+	}
+
+	private boolean canUseUserDetailsActions() {
+		return sessionEnabled && !isApiBusy();
+	}
+
 	/**
 	 * Sets focus to the user list composite.
 	 */
@@ -667,7 +642,7 @@ public class UserPart {
 	public void setFocus() {
 		userListComposite.setFocus();
 	}
-	
+
 	/**
 	 * Performs part cleanup during disposal.
 	 */
