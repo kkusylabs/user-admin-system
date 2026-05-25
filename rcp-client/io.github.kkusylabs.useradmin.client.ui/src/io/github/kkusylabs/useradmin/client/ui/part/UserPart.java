@@ -100,6 +100,8 @@ public class UserPart {
 	private boolean detailsEditing;
 
 	private int apiBusyCount;
+	
+	public static final String ID = "io.github.kkusylabs.useradmin.client.ui.part.users";
 
 	/**
 	 * Creates the user administration UI.
@@ -633,6 +635,10 @@ public class UserPart {
 
 	private boolean canUseUserDetailsActions() {
 		return sessionEnabled && !isApiBusy();
+	}
+	
+	public boolean hasPendingChanges() {
+		return detailsEditing;
 	}
 
 	/**

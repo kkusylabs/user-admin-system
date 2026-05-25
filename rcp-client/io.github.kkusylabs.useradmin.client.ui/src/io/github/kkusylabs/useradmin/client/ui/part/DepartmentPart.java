@@ -80,6 +80,8 @@ public class DepartmentPart {
 	private int apiBusyCount;
 	
 	private boolean suppressSelectionEvents;
+	
+	public static final String ID = "io.github.kkusylabs.useradmin.client.ui.part.departments";
 
 	/**
 	 * Creates the department administration UI.
@@ -439,6 +441,10 @@ public class DepartmentPart {
 	
 	private boolean canUseDepartmentDetailsActions() {
 		return sessionEnabled && !isApiBusy();
+	}
+	
+	public boolean hasPendingChanges() {
+		return detailsEditing;
 	}
 
 	/**
