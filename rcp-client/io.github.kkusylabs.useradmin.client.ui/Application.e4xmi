@@ -7,12 +7,16 @@
     </children>
     <mainMenu xmi:id="_Wo0nwE4mEfGgzozj6cGDGA" elementId="io.github.kkusylabs.useradmin.client.ui.menu.0">
       <children xsi:type="menu:Menu" xmi:id="_oi5nsE4mEfGgzozj6cGDGA" elementId="io.github.kkusylabs.useradmin.client.ui.menu.file" label="File">
+        <children xsi:type="menu:HandledMenuItem" xmi:id="_PCghwFhaEfGhy_kLJIe_YA" elementId="io.github.kkusylabs.useradmin.client.ui.handledmenuitem.logout" label="Logout" command="_3UdYEFhZEfGhy_kLJIe_YA"/>
+        <children xsi:type="menu:MenuSeparator" xmi:id="_aNOtwFhaEfGhy_kLJIe_YA" elementId="io.github.kkusylabs.useradmin.client.ui.menuseparator.0"/>
         <children xsi:type="menu:HandledMenuItem" xmi:id="_rFEpgE4mEfGgzozj6cGDGA" elementId="io.github.kkusylabs.useradmin.client.ui.handledmenuitem.exit" label="Exit" command="_u1utIE4lEfGgzozj6cGDGA"/>
       </children>
     </mainMenu>
   </children>
   <handlers xmi:id="_182g0E4lEfGgzozj6cGDGA" elementId="io.github.kkusylabs.useradmin.client.ui.handler.exit" contributionURI="bundleclass://io.github.kkusylabs.useradmin.client.ui/io.github.kkusylabs.useradmin.client.ui.handler.ExitHandler" command="_u1utIE4lEfGgzozj6cGDGA"/>
+  <handlers xmi:id="_DSsEoFhaEfGhy_kLJIe_YA" elementId="io.github.kkusylabs.useradmin.client.ui.handler.logut" contributionURI="bundleclass://io.github.kkusylabs.useradmin.client.ui/io.github.kkusylabs.useradmin.client.ui.handler.LogoutHandler" command="_3UdYEFhZEfGhy_kLJIe_YA"/>
   <commands xmi:id="_u1utIE4lEfGgzozj6cGDGA" elementId="io.github.kkusylabs.useradmin.command.exit" commandName="Exit"/>
+  <commands xmi:id="_3UdYEFhZEfGhy_kLJIe_YA" elementId="io.github.kkusylabs.useradmin.command.logout" commandName="Logout"/>
   <addons xmi:id="_RPLaEUi2EfGJdfQm_P_onw" elementId="org.eclipse.e4.core.commands.service" contributionURI="bundleclass://org.eclipse.e4.core.commands/org.eclipse.e4.core.commands.CommandServiceAddon"/>
   <addons xmi:id="_RPLaEki2EfGJdfQm_P_onw" elementId="org.eclipse.e4.ui.contexts.service" contributionURI="bundleclass://org.eclipse.e4.ui.services/org.eclipse.e4.ui.services.ContextServiceAddon"/>
   <addons xmi:id="_RPLaE0i2EfGJdfQm_P_onw" elementId="org.eclipse.e4.ui.bindings.service" contributionURI="bundleclass://org.eclipse.e4.ui.bindings/org.eclipse.e4.ui.bindings.BindingServiceAddon"/>

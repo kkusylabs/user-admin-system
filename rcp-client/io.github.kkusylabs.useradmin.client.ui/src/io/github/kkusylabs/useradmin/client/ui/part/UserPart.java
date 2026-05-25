@@ -280,20 +280,36 @@ public class UserPart {
 		updateUiEnabledState();
 		loadInitialData();
 	}
+	
+	/**
+	 * Clears authenticated UI state after authentication expires.
+	 *
+	 * @param ignored unused event payload
+	 */
+	public void onAuthExpired(@UIEventTopic(AppTopics.AUTH_EXPIRED) Object ignored) {
+		clearSessionState();
+	}
 
 	/**
-	 * Resets the part after authentication expires.
+	 * Clears authenticated UI state after an explicit logout.
 	 *
-	 * <p>
-	 * Clears workflow state, removes loaded user data, and disables
-	 * authenticated UI actions until a new login occurs.
-	 * </p>
-	 *
-	 * @param event authentication expiration event payload
+	 * @param ignored unused event payload
 	 */
 	@Inject
 	@Optional
-	public void onAuthExpired(@UIEventTopic(AppTopics.AUTH_EXPIRED) Object event) {
+	public void onLogout(@UIEventTopic(AppTopics.LOGOUT) Object ignored) {
+		clearSessionState();
+	}
+
+	/**
+	 * Clears authenticated UI state after the current session ends.
+	 *
+	 * <p>
+	 * Resets workflow state, clears loaded data, and disables authenticated
+	 * actions until the user logs in again.
+	 * </p>
+	 */
+	private void clearSessionState() {
 		sessionEnabled = false;
 		apiBusyCount = 0;
 		detailsEditing = false;

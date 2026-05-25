@@ -1,40 +1,35 @@
 package io.github.kkusylabs.useradmin.client.ui.handler;
 
 import org.eclipse.e4.core.di.annotations.Execute;
-import org.eclipse.e4.ui.workbench.IWorkbench;
+import org.eclipse.e4.core.services.events.IEventBroker;
 import org.eclipse.e4.ui.workbench.modeling.EPartService;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Shell;
 
+import io.github.kkusylabs.useradmin.client.core.auth.SessionTokenStore;
+import io.github.kkusylabs.useradmin.client.ui.events.AppTopics;
 import io.github.kkusylabs.useradmin.client.ui.util.PartUtil;
 
-/**
- * Eclipse command handler responsible for closing the application.
- */
-public class ExitHandler {
-
-	/**
-	 * Closes the Eclipse workbench and exits the application.
-	 *
-	 * @param workbench Eclipse workbench instance
-	 */
+public class LogoutHandler {
 	@Execute
 	public void execute(
-			IWorkbench workbench,
+			IEventBroker eventBroker,
 			EPartService partService,
+			SessionTokenStore tokenStore,
 			Shell shell) {
 
 		if (PartUtil.hasPendingChanges(partService)) {
 			boolean discard = MessageDialog.openQuestion(
 					shell,
 					"Discard Changes?",
-					"You have unsaved changes. Exit anyway?");
+					"You have unsaved changes. Log out anyway?");
 
 			if (!discard) {
 				return;
 			}
 		}
 
-		workbench.close();
+		tokenStore.clear();
+		eventBroker.post(AppTopics.LOGOUT, null);
 	}
 }

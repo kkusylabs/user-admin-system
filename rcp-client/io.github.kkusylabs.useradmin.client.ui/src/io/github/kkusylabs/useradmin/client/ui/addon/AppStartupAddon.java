@@ -5,29 +5,17 @@ import org.eclipse.e4.ui.di.UIEventTopic;
 import org.eclipse.e4.ui.di.UISynchronize;
 import org.eclipse.e4.ui.model.application.MApplication;
 import org.eclipse.e4.ui.model.application.ui.basic.MWindow;
+import org.eclipse.e4.ui.workbench.UIEvents; // Make sure to import this
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Shell;
 
-import io.github.kkusylabs.useradmin.client.core.auth.SessionTokenStore;
 import io.github.kkusylabs.useradmin.client.ui.dialogs.LoginDialog;
 import io.github.kkusylabs.useradmin.client.ui.dialogs.LoginService;
 import io.github.kkusylabs.useradmin.client.ui.events.AppTopics;
-import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 
 /**
  * Application startup addon responsible for coordinating the login workflow.
- *
- * <p>
- * This addon displays the login dialog during application startup and when
- * authentication expires. The login dialog is deferred until the primary
- * application shell becomes available.
- * </p>
- *
- * <p>
- * Authentication expiration events are received through the Eclipse event
- * broker using {@link AppTopics#AUTH_EXPIRED}.
- * </p>
  */
 public class AppStartupAddon {
 
@@ -36,8 +24,6 @@ public class AppStartupAddon {
 
 	@Inject
 	private MApplication application;
-	
-	@Inject SessionTokenStore tokenStore;
 
 	@Inject
 	private LoginService loginService;
@@ -45,54 +31,48 @@ public class AppStartupAddon {
 	private boolean loginShowing = false;
 
 	/**
-	 * Initializes the startup workflow by asynchronously waiting for the
-	 * application shell and displaying the login dialog.
+	 * Handles the initial application startup event. The shell is guaranteed to
+	 * exist at this point.
 	 */
-	@PostConstruct
-	public void startup() {
-		uiSync.asyncExec(this::showLoginWhenShellExists);
+	@Inject
+	@Optional
+	public void onAppStartupComplete(@UIEventTopic(UIEvents.UILifeCycle.APP_STARTUP_COMPLETE) Object event) {
+		triggerDeferredLogin();
 	}
 
 	/**
-	 * Handles authentication expiration events by clearing the current session
-	 * token and reopening the login dialog.
-	 *
-	 * @param ignored unused event payload
+	 * Reopens the login workflow after authentication expires.
 	 */
 	@Inject
 	@Optional
 	public void onAuthExpired(@UIEventTopic(AppTopics.AUTH_EXPIRED) Object ignored) {
-
-		uiSync.asyncExec(() -> {
-			tokenStore.clear();
-			showLoginWhenShellExists();
-		});
+		triggerDeferredLogin();
 	}
 
 	/**
-	 * Waits for the primary application shell to become available before
-	 * displaying the login dialog.
+	 * Reopens the login workflow after an explicit logout.
 	 */
-	private void showLoginWhenShellExists() {
+	@Inject
+	@Optional
+	public void onLogout(@UIEventTopic(AppTopics.LOGOUT) Object ignored) {
+		triggerDeferredLogin();
+	}
+
+	/**
+	 * Safely queues the login dialog to the end of the SWT event loop. * For
+	 * startup: Gives the window a split second to finish rendering. For
+	 * logout/expired events: Allows concurrent UI listeners to wipe their widgets
+	 * first.
+	 */
+	private void triggerDeferredLogin() {
 		Shell shell = getShell();
-
-		if (shell == null || shell.isDisposed()) {
-			uiSync.asyncExec(this::showLoginWhenShellExists);
-			return;
+		if (shell != null && !shell.isDisposed()) {
+			uiSync.asyncExec(() -> showLoginIfNeeded(shell));
 		}
-
-		showLoginIfNeeded(shell);
 	}
 
 	/**
 	 * Displays the login dialog if one is not already active.
-	 *
-	 * <p>
-	 * If the login dialog is canceled or closed without successful
-	 * authentication, the main application shell is closed.
-	 * </p>
-	 *
-	 * @param shell application shell used as the dialog parent
 	 */
 	private void showLoginIfNeeded(Shell shell) {
 		if (loginShowing) {
@@ -103,23 +83,18 @@ public class AppStartupAddon {
 
 		try {
 			LoginDialog dialog = new LoginDialog(shell, loginService);
-
 			int result = dialog.open();
 
 			if (result != Window.OK) {
 				shell.close();
 			}
-
 		} finally {
 			loginShowing = false;
 		}
 	}
 
 	/**
-	 * Returns the primary SWT shell associated with the Eclipse application
-	 * window.
-	 *
-	 * @return application shell, or {@code null} if not yet available
+	 * Returns the primary SWT shell associated with the Eclipse application window.
 	 */
 	private Shell getShell() {
 		if (application.getChildren().isEmpty()) {
@@ -127,13 +102,11 @@ public class AppStartupAddon {
 		}
 
 		MWindow window = application.getChildren().get(0);
-
 		if (window == null) {
 			return null;
 		}
 
 		Object widget = window.getWidget();
-
 		if (widget instanceof Shell shell) {
 			return shell;
 		}

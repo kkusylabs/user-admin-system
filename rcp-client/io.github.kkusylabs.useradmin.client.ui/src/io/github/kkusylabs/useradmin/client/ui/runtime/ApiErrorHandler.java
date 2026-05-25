@@ -10,6 +10,7 @@ import org.eclipse.swt.widgets.Shell;
 
 import io.github.kkusylabs.useradmin.client.core.api.ForbiddenException;
 import io.github.kkusylabs.useradmin.client.core.api.UnauthorizedException;
+import io.github.kkusylabs.useradmin.client.core.auth.SessionTokenStore;
 import io.github.kkusylabs.useradmin.client.ui.events.AppTopics;
 
 /**
@@ -29,14 +30,17 @@ import io.github.kkusylabs.useradmin.client.ui.events.AppTopics;
 public final class ApiErrorHandler {
 
 	private final IEventBroker eventBroker;
+	
+	private final SessionTokenStore tokenStore;
 
 	/**
 	 * Creates the API error handler.
 	 *
 	 * @param eventBroker Eclipse event broker
 	 */
-	public ApiErrorHandler(IEventBroker eventBroker) {
+	public ApiErrorHandler(IEventBroker eventBroker, SessionTokenStore tokenStore) {
 		this.eventBroker = eventBroker;
+		this.tokenStore = tokenStore;
 	}
 
 	/**
@@ -55,7 +59,8 @@ public final class ApiErrorHandler {
 	public void handleDefault(Shell shell, Throwable error, String errorTitle, String fallbackErrorMessage) {
 
 		if (error instanceof UnauthorizedException) {
-			eventBroker.post(AppTopics.AUTH_EXPIRED, new Object());
+			tokenStore.clear();
+			eventBroker.post(AppTopics.AUTH_EXPIRED, null);
 			return;
 		}
 

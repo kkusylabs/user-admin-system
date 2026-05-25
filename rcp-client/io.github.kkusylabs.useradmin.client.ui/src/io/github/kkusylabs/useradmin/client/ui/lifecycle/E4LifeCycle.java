@@ -84,7 +84,7 @@ public class E4LifeCycle {
 		UserApiClient userApiClient = new UserApiClient(restClient);
 		DepartmentApiClient departmentApiClient = new DepartmentApiClient(restClient);
 		
-		ApiErrorHandler apiErrorHandler = new ApiErrorHandler(eventBroker);
+		ApiErrorHandler apiErrorHandler = new ApiErrorHandler(eventBroker, tokenStore);
 		ApiExecutor apiExecutor = new ApiExecutor();
 		UiApiRunner apiRunner = new UiApiRunner(apiExecutor, uiSync, apiErrorHandler);
 		
