@@ -559,7 +559,6 @@ This allows:
 
 # Future Enhancements
 
-* Improve busy/loading state handling during asynchronous REST operations
 * Improved client-side error handling and more user-friendly validation and API error messages
 * Password management workflows
   * administrator password reset support
