@@ -3,7 +3,6 @@ package io.github.kkusylabs.useradmin.client.ui.part;
 import org.eclipse.e4.core.di.annotations.Optional;
 import org.eclipse.e4.ui.di.Focus;
 import org.eclipse.e4.ui.di.UIEventTopic;
-import org.eclipse.e4.ui.di.UISynchronize;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
@@ -71,19 +70,16 @@ public class DepartmentPart {
 	
 	@Inject
 	private SessionTokenStore tokenStore;
-	
-	@Inject
-	private UISynchronize uiSync;
 
 	private DepartmentListItemResponse selectedDepartment;
-
-	private boolean suppressSelectionEvents;
 	
 	private boolean sessionEnabled;
-
-	private boolean apiBusy;
-
+	
 	private boolean detailsEditing;
+
+	private int apiBusyCount;
+	
+	private boolean suppressSelectionEvents;
 
 	/**
 	 * Creates the department administration UI.
@@ -123,29 +119,27 @@ public class DepartmentPart {
 
 			@Override
 			public void addDepartmentRequested() {
-				if (!canUseDepartmentListActions()) {
-					return;
+				if (canUseDepartmentListActions()) {
+					beginCreateDepartment();
 				}
-				
-				beginCreateDepartment();
 			}
 
 			@Override
 			public void deleteDepartmentRequested(DepartmentListItemResponse department) {
-				if (!canUseDepartmentListActions()) {
-					return;
+				if (canUseDepartmentListActions()) {
+					deleteDepartment(department);
 				}
-				
-				deleteDepartment(department);
 			}
 
 			@Override
 			public void departmentSelected(DepartmentListItemResponse department) {
-				if (!canUseDepartmentListActions()) {
+				if (suppressSelectionEvents) {
 					return;
 				}
 				
-				selectDepartment(department);
+				if (canUseDepartmentListActions()) {
+					selectDepartment(department);
+				}
 			}
 		});
 	}
@@ -155,22 +149,30 @@ public class DepartmentPart {
 
 			@Override
 			public void editDepartmentRequested(DepartmentListItemResponse department) {
-				beginEditDepartment(department);
+				if (canUseDepartmentDetailsActions()) {
+					beginEditDepartment(department);
+				}
 			}
 
 			@Override
 			public void createDepartmentRequested(CreateDepartmentRequest request) {
-				createDepartment(request);
+				if (canUseDepartmentDetailsActions()) {
+					createDepartment(request);
+				}
 			}
 
 			@Override
 			public void updateDepartmentRequested(long departmentId, UpdateDepartmentRequest request) {
-				updateDepartment(departmentId, request);
+				if (canUseDepartmentDetailsActions()) {
+					updateDepartment(departmentId, request);
+				}
 			}
 
 			@Override
 			public void cancelRequested() {
-				cancelEditing();
+				if (canUseDepartmentDetailsActions()) {
+					cancelEditing();
+				}
 			}
 		});
 	}
@@ -183,26 +185,22 @@ public class DepartmentPart {
 	@Inject
 	@Optional
 	public void onLoginSuccess(@UIEventTopic(AppTopics.LOGIN_SUCCESS) String username) {
-		uiSync.asyncExec(() -> {
-			sessionEnabled = true;
-			apiBusy = false;
-			detailsEditing = false;
-			selectedDepartment = null;
-			updateUiEnabledState();
-			loadDepartments();
-		});
+		sessionEnabled = true;
+		apiBusyCount = 0;
+		detailsEditing = false;
+		selectedDepartment = null;
+		updateUiEnabledState();
+		loadDepartments();
 	}
 	
 	@Inject
 	@Optional
 	public void onAuthExpired(@UIEventTopic(AppTopics.AUTH_EXPIRED) Object event) {
-		uiSync.asyncExec(() -> {
-			sessionEnabled = false;
-			apiBusy = false;
-			detailsEditing = false;
-			clearDepartmentUi();
-			updateUiEnabledState();
-		});
+		sessionEnabled = false;
+		apiBusyCount = 0;
+		detailsEditing = false;
+		clearDepartmentUi();
+		updateUiEnabledState();
 	}
 
 	private void loadDepartments() {
@@ -212,8 +210,7 @@ public class DepartmentPart {
 				.onSuccess(this::showDepartments)
 				.onAfter(this::endApi)
 				.onError(
-						"Load Failed",
-						"Could not fetch departments.")
+						"Load Failed", "Could not fetch departments.")
 				.execute();
 	}
 
@@ -223,30 +220,21 @@ public class DepartmentPart {
 	}
 
 	private void reconcileSelectedDepartment(DepartmentListResponse response) {
-		if (selectedDepartment == null) {
-			departmentDetailsComposite.clear();
+		Long selectedId = selectedDepartmentId();
+
+		if (selectedId == null) {
+			selectDepartmentEverywhere(null);
 			return;
 		}
 
-		DepartmentListItemResponse refreshed =
-				findDepartment(response, selectedDepartment.department().id());
-
-		if (refreshed == null) {
-			selectedDepartment = null;
-			departmentDetailsComposite.clear();
-			return;
-		}
-
-		selectedDepartment = refreshed;
-
-		suppressSelectionEvents = true;
-		try {
-			departmentListComposite.selectDepartment(refreshed.department().id());
-		} finally {
-			suppressSelectionEvents = false;
-		}
-
-		departmentDetailsComposite.showViewMode(refreshed);
+		DepartmentListItemResponse refreshed = findDepartment(response, selectedId);
+		selectDepartmentEverywhere(refreshed);
+	}
+	
+	private Long selectedDepartmentId() {
+		return selectedDepartment == null
+				? null
+				: selectedDepartment.department().id();
 	}
 
 	private DepartmentListItemResponse findDepartment(
@@ -269,85 +257,29 @@ public class DepartmentPart {
 		departmentDetailsComposite.showCreateMode();
 		setDetailsEditing(true);
 	}
-
-	private void deleteDepartment(DepartmentListItemResponse department) {
-		boolean confirmed =
-				MessageDialog.openConfirm(
-						departmentListComposite.getShell(),
-						"Delete Department",
-						"Delete department '" +
-								department.department().name() +
-								"'?");
-
-		if (!confirmed) {
-			return;
-		}
-
-		apiRunner.task(() ->
-				departmentApiClient.deleteDepartment(department.department().id()))
-				.onControl(departmentListComposite)
-				.onBefore(this::beginApi)
-				.onSuccess(v -> {
-					if (selectedDepartment != null &&
-							selectedDepartment.department().id().equals(department.department().id())) {
-
-						selectedDepartment = null;
-						departmentDetailsComposite.clear();
-					}
-
-					loadDepartments();
-
-					MessageDialog.openInformation(
-							departmentListComposite.getShell(),
-							"Department Deleted",
-							"Department deleted successfully.");
-				})
-				.onAfter(this::endApi)
-				.onError(
-						"Delete Failed",
-						"Could not delete department.")
-				.execute();
-	}
-
-	private void selectDepartment(
-			DepartmentListItemResponse department) {
-
-		if (suppressSelectionEvents) {
-			return;
-		}
-
-		selectedDepartment = department;
-
-		showSelectedDepartment();
-	}
-
+	
 	private void beginEditDepartment(DepartmentListItemResponse department) {
+		selectedDepartment = department;
 		departmentDetailsComposite.showEditMode(department);
 		setDetailsEditing(true);
 	}
-
+	
 	private void createDepartment(CreateDepartmentRequest request) {
 		apiRunner.task(() -> departmentApiClient.createDepartment(request))
 				.onControl(departmentDetailsComposite)
 				.onBefore(this::beginApi)
 				.onSuccess(created -> {
-					selectedDepartment = created;
-					departmentDetailsComposite.showViewMode(created);
 					setDetailsEditing(false);
+					selectDepartment(created);
 					loadDepartments();
-
-					MessageDialog.openInformation(
-							departmentDetailsComposite.getShell(),
-							"Department Created",
-							"Department created successfully.");
+					showSuccess("Department Created", "Department created successfully.");
 				})
 				.onAfter(this::endApi)
 				.onError(
-						"Create Failed",
-						"Could not create department.")
+						"Create Failed", "Could not create department.")
 				.execute();
 	}
-
+	
 	private void updateDepartment(
 			long departmentId,
 			UpdateDepartmentRequest request) {
@@ -357,48 +289,92 @@ public class DepartmentPart {
 				.onControl(departmentDetailsComposite)
 				.onBefore(this::beginApi)
 				.onSuccess(updated -> {
-					selectedDepartment = updated;
-					departmentDetailsComposite.showViewMode(updated);
 					setDetailsEditing(false);
-					suppressSelectionEvents = true;
-					try {
-						departmentListComposite.replaceDepartment(updated);
-						departmentListComposite.selectDepartment(updated.department().id());
-					} finally {
-						suppressSelectionEvents = false;
-					}
-
-					MessageDialog.openInformation(
-							departmentDetailsComposite.getShell(),
-							"Department Updated",
-							"Department updated successfully.");
+					departmentListComposite.replaceDepartment(updated);
+					selectDepartmentEverywhere(updated);
+					showSuccess("Department Updated", "Department updated successfully.");
 				})
 				.onAfter(this::endApi)
 				.onError(
-						"Update Failed",
-						"Could not update department.")
+						"Update Failed", "Could not update department.")
 				.execute();
 	}
 
-	private void cancelEditing() {
-		setDetailsEditing(false);
-		showSelectedDepartment();
-	}
-	
-	private void showSelectedDepartment() {
-		if (selectedDepartment != null) {
-			departmentDetailsComposite.showViewMode(
-					selectedDepartment);
+	private void deleteDepartment(DepartmentListItemResponse department) {
+		if (!confirmDeleteDepartment(department)) {
 			return;
 		}
 
-		departmentDetailsComposite.clear();
+		apiRunner.task(() ->
+				departmentApiClient.deleteDepartment(department.department().id()))
+				.onControl(departmentListComposite)
+				.onBefore(this::beginApi)
+				.onSuccess(v -> {
+					clearSelectionIfDeleted(department);
+					loadDepartments();
+					showSuccess("Department Deleted", "Department deleted successfully.");
+				})
+				.onAfter(this::endApi)
+				.onError("Delete Failed", "Could not delete department.")
+				.execute();
+	}
+	
+	private boolean confirmDeleteDepartment(DepartmentListItemResponse department) {
+		return MessageDialog.openConfirm(
+				departmentListComposite.getShell(),
+				"Delete Department",
+				"Delete department '" + department.department().name() + "'?");
+	}
+
+	private void selectDepartment(DepartmentListItemResponse department) {
+		selectedDepartment = department;
+
+		if (department == null) {
+			departmentDetailsComposite.clear();
+			return;
+		}
+
+		departmentDetailsComposite.showViewMode(department);
+	}
+	
+	private void selectDepartmentEverywhere(DepartmentListItemResponse department) {
+		selectDepartment(department);
+		selectDepartmentInList(department == null ? null : department.department().id());
+	}
+	
+	private void selectDepartmentInList(Long departmentId) {
+		suppressSelectionEvents = true;
+		try {
+			departmentListComposite.selectDepartment(departmentId);
+		} finally {
+			suppressSelectionEvents = false;
+		}
+	}
+	
+
+	private void cancelEditing() {
+		setDetailsEditing(false);
+		selectDepartment(selectedDepartment);
+	}
+
+	private void clearSelectionIfDeleted(DepartmentListItemResponse deleted) {
+		if (selectedDepartment != null &&
+				selectedDepartment.department().id().equals(deleted.department().id())) {
+			selectDepartmentEverywhere(null);
+		}
 	}
 	
 	private void clearDepartmentUi() {
 		selectedDepartment = null;
 		departmentListComposite.clear();
 		departmentDetailsComposite.clear();
+	}
+	
+	private void showSuccess(String title, String message) {
+		MessageDialog.openInformation(
+				departmentDetailsComposite.getShell(),
+				title,
+				message);
 	}
 
 	private void setDetailsEditing(boolean editing) {
@@ -407,32 +383,46 @@ public class DepartmentPart {
 	}
 
 	private void beginApi() {
-		apiBusy = true;
+		apiBusyCount++;
 		updateUiEnabledState();
 	}
 
 	private void endApi() {
-		apiBusy = false;
+		apiBusyCount = Math.max(0, apiBusyCount - 1);
 		updateUiEnabledState();
+	}
+	
+	private boolean isApiBusy() {
+		return apiBusyCount > 0;
 	}
 
 	private void updateUiEnabledState() {
-		boolean baseEnabled =
-				sessionEnabled && !apiBusy;
+		boolean baseEnabled = sessionEnabled && !isApiBusy();
 
-		departmentListComposite.getShell()
-				.setCursor(apiBusy ? departmentListComposite.getDisplay().getSystemCursor(SWT.CURSOR_WAIT) : null);
-		
-		departmentDetailsComposite.setEnabled(baseEnabled);
+		if (departmentListComposite == null || departmentDetailsComposite == null) {
+			return;
+		}
 
-		departmentListComposite.setEnabled(
-				baseEnabled && !detailsEditing);
+		if (!departmentListComposite.isDisposed()) {
+			departmentListComposite.getShell()
+					.setCursor(isApiBusy()
+							? departmentListComposite.getDisplay().getSystemCursor(SWT.CURSOR_WAIT)
+							: null);
+
+			departmentListComposite.setEnabled(baseEnabled && !detailsEditing);
+		}
+
+		if (!departmentDetailsComposite.isDisposed()) {
+			departmentDetailsComposite.setEnabled(baseEnabled);
+		}
 	}
 
 	private boolean canUseDepartmentListActions() {
-		return sessionEnabled &&
-				!apiBusy &&
-				!detailsEditing;
+		return sessionEnabled && !isApiBusy() && !detailsEditing;
+	}
+	
+	private boolean canUseDepartmentDetailsActions() {
+		return sessionEnabled && !isApiBusy();
 	}
 
 	/**

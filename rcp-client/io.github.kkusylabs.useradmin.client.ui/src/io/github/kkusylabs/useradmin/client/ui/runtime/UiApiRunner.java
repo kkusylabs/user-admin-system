@@ -168,7 +168,7 @@ public final class UiApiRunner {
 
 			// 1. Initial UI feedback (Immediate)
 			if (onBefore != null) {
-				uiSync.asyncExec(onBefore);
+				uiSync.syncExec(onBefore);
 			}
 
 			// 2. Background Execution

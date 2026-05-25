@@ -162,7 +162,7 @@ public class DepartmentListComposite extends Composite {
 
 			deleteButton.setEnabled(selected != null && selected.canDelete());
 
-			if (selected != null && this.actions != null) {
+			if (this.actions != null) {
 				this.actions.departmentSelected(selected);
 			}
 		});
@@ -218,7 +218,6 @@ public class DepartmentListComposite extends Composite {
 			if (existing.department().id().equals(updated.department().id())) {
 				departments.set(i, updated);
 				viewer.refresh();
-				selectDepartment(updated.department().id());
 				return;
 			}
 		}
