@@ -25,4 +25,5 @@
   <addons xmi:id="_RPLaFki2EfGJdfQm_P_onw" elementId="org.eclipse.e4.ui.workbench.bindings.model" contributionURI="bundleclass://org.eclipse.e4.ui.workbench.swt/org.eclipse.e4.ui.workbench.swt.util.BindingProcessingAddon"/>
   <addons xmi:id="_RPLaF0i2EfGJdfQm_P_onw" elementId="org.eclipse.e4.ui.workbench.handler.model" contributionURI="bundleclass://org.eclipse.e4.ui.workbench/org.eclipse.e4.ui.internal.workbench.addons.HandlerProcessingAddon"/>
   <addons xmi:id="__di4UE5DEfGgzozj6cGDGA" elementId="io.github.kkusylabs.useradmin.client.ui.addon.startup" contributionURI="bundleclass://io.github.kkusylabs.useradmin.client.ui/io.github.kkusylabs.useradmin.client.ui.addon.AppStartupAddon"/>
+  <addons xmi:id="_BoFdkFkWEfGKgc99o1KsPw" elementId="io.github.kkusylabs.useradmin.client.ui.addon.windowclose" contributionURI="bundleclass://io.github.kkusylabs.useradmin.client.ui/io.github.kkusylabs.useradmin.client.ui.addon.WindowCloseAddon"/>
 </application:Application>
