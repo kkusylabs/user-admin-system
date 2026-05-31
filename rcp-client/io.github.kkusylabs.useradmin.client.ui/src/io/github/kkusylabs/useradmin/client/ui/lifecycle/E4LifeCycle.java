@@ -11,8 +11,8 @@ import org.eclipse.e4.ui.workbench.lifecycle.PostContextCreate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.github.kkusylabs.useradmin.client.core.api.DefaultErrorMapper;
 import io.github.kkusylabs.useradmin.client.core.api.RestClient;
+import io.github.kkusylabs.useradmin.client.core.api.UserAdminErrorMapper;
 import io.github.kkusylabs.useradmin.client.core.api.auth.AuthApiClient;
 import io.github.kkusylabs.useradmin.client.core.api.department.DepartmentApiClient;
 import io.github.kkusylabs.useradmin.client.core.api.user.UserApiClient;
@@ -22,6 +22,8 @@ import io.github.kkusylabs.useradmin.client.ui.config.AppConfig;
 import io.github.kkusylabs.useradmin.client.ui.dialogs.LoginService;
 import io.github.kkusylabs.useradmin.client.ui.runtime.ApiErrorHandler;
 import io.github.kkusylabs.useradmin.client.ui.runtime.ApiExecutor;
+import io.github.kkusylabs.useradmin.client.ui.runtime.DefaultExceptionDialogMessageMapper;
+import io.github.kkusylabs.useradmin.client.ui.runtime.ExceptionDialogMessageMapper;
 import io.github.kkusylabs.useradmin.client.ui.runtime.UiApiRunner;
 import jakarta.annotation.PreDestroy;
 
@@ -84,14 +86,15 @@ public class E4LifeCycle {
 				httpClient,
 				objectMapper,
 				tokenProvider,
-				DefaultErrorMapper.INSTANCE,
+				new UserAdminErrorMapper(objectMapper),
 				Duration.ofSeconds(20));
 
 		AuthApiClient loginApiClient = new AuthApiClient(restClient);
 		UserApiClient userApiClient = new UserApiClient(restClient);
 		DepartmentApiClient departmentApiClient = new DepartmentApiClient(restClient);
+		ExceptionDialogMessageMapper dialogMessageMapper = new DefaultExceptionDialogMessageMapper();
 		
-		ApiErrorHandler apiErrorHandler = new ApiErrorHandler(eventBroker, tokenStore);
+		ApiErrorHandler apiErrorHandler = new ApiErrorHandler(eventBroker, tokenStore, dialogMessageMapper);
 		ApiExecutor apiExecutor = new ApiExecutor();
 		UiApiRunner apiRunner = new UiApiRunner(apiExecutor, uiSync, apiErrorHandler);
 		

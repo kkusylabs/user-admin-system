@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.github.kkusylabs.useradmin.client.core.api.RestClient;
+import io.github.kkusylabs.useradmin.client.core.api.UserAdminErrorMapper;
 import io.github.kkusylabs.useradmin.client.core.api.auth.AuthApiClient;
 import io.github.kkusylabs.useradmin.client.core.api.auth.LoginResponse;
 import io.github.kkusylabs.useradmin.client.core.auth.SessionAuthTokenProvider;
@@ -43,6 +44,7 @@ public abstract class AbstractRealBackendApiTest {
 				httpClient,
 				objectMapper,
 				new SessionAuthTokenProvider(tokenStore),
+				new UserAdminErrorMapper(objectMapper),
 				Duration.ofSeconds(20));
 
 		authApiClient = new AuthApiClient(restClient);

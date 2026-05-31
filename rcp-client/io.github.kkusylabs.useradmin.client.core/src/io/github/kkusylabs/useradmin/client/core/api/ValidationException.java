@@ -1,5 +1,7 @@
 package io.github.kkusylabs.useradmin.client.core.api;
 
+import java.util.Map;
+
 /**
  * Thrown when the API rejects a request because one or more validation rules
  * were violated.
@@ -9,16 +11,20 @@ package io.github.kkusylabs.useradmin.client.core.api;
  */
 @SuppressWarnings("serial")
 public class ValidationException extends BadRequestException {
-	/**
-	 * Creates a new exception instance.
-	 *
-	 * @param message validation error message returned by the API
-	 */
-	public ValidationException(String message) {
+
+	private final Map<String, String> errors;
+
+	public ValidationException(
+			String message,
+			Map<String, String> errors) {
+
 		super(message);
+		this.errors = errors == null
+				? Map.of()
+				: Map.copyOf(errors);
 	}
 
-	public ValidationException(String message, Throwable cause) {
-		super(message, cause);
+	public Map<String, String> getErrors() {
+		return errors;
 	}
 }
