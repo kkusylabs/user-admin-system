@@ -287,9 +287,15 @@ public class RestClient {
 			String path,
 			Map<String, ?> queryParameters) {
 
-		URI uri = path == null || path.isBlank()
-				? baseUri
-				: baseUri.resolve(path);
+		String normalizedPath = path == null ? "" : path;
+
+		while (normalizedPath.startsWith("/")) {
+			normalizedPath = normalizedPath.substring(1);
+		}
+
+		URI uri = baseUri.toString().endsWith("/")
+				? baseUri.resolve(normalizedPath)
+				: URI.create(baseUri + "/").resolve(normalizedPath);
 
 		if (queryParameters == null
 				|| queryParameters.isEmpty()) {
