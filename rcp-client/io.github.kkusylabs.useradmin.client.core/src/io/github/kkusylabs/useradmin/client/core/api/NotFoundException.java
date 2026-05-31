@@ -17,4 +17,8 @@ public class NotFoundException extends RestClientException {
 	public NotFoundException(String message) {
 		super(message);
 	}
+
+	public NotFoundException(String message, Throwable cause) {
+		super(message, cause);
+	}
 }

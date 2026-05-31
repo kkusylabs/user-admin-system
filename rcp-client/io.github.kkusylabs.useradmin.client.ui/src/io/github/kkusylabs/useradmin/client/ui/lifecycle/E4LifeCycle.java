@@ -1,5 +1,6 @@
 package io.github.kkusylabs.useradmin.client.ui.lifecycle;
 
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Duration;
 
@@ -10,6 +11,7 @@ import org.eclipse.e4.ui.workbench.lifecycle.PostContextCreate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.github.kkusylabs.useradmin.client.core.api.DefaultErrorMapper;
 import io.github.kkusylabs.useradmin.client.core.api.RestClient;
 import io.github.kkusylabs.useradmin.client.core.api.auth.AuthApiClient;
 import io.github.kkusylabs.useradmin.client.core.api.department.DepartmentApiClient;
@@ -77,8 +79,13 @@ public class E4LifeCycle {
 		SessionTokenStore tokenStore = new SessionTokenStore();
 		SessionAuthTokenProvider tokenProvider = new SessionAuthTokenProvider(tokenStore);
 
-		RestClient restClient = new RestClient(httpClient, objectMapper, appConfig.getBaseUrl(), Duration.ofSeconds(20),
-				tokenProvider);
+		RestClient restClient = new RestClient(
+				URI.create(appConfig.getBaseUrl()),
+				httpClient,
+				objectMapper,
+				tokenProvider,
+				DefaultErrorMapper.INSTANCE,
+				Duration.ofSeconds(20));
 
 		AuthApiClient loginApiClient = new AuthApiClient(restClient);
 		UserApiClient userApiClient = new UserApiClient(restClient);

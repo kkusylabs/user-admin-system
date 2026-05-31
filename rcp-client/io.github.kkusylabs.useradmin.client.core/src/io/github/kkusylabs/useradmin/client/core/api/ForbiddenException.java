@@ -18,4 +18,8 @@ public class ForbiddenException extends RestClientException {
 	public ForbiddenException(String message) {
 		super(message);
 	}
+
+	public ForbiddenException(String message, Throwable cause) {
+		super(message, cause);
+	}
 }

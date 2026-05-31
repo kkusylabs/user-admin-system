@@ -16,4 +16,8 @@ public class BadRequestException extends RestClientException {
 	public BadRequestException(String message) {
 		super(message);
 	}
+
+	public BadRequestException(String message, Throwable cause) {
+		super(message, cause);
+	}
 }

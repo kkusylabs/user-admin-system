@@ -1,9 +1,5 @@
 package io.github.kkusylabs.useradmin.client.core.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.github.kkusylabs.useradmin.client.core.auth.AuthTokenProvider;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -14,286 +10,314 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
-import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
-/**
- * Minimal JSON-based REST client used by API-specific client wrappers.
- *
- * <p>Handles request serialization, response deserialization, authentication,
- * timeout configuration, and HTTP error translation.
- */
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.github.kkusylabs.useradmin.client.core.auth.AuthTokenProvider;
+
 public class RestClient {
 
+	private final URI baseUri;
 	private final HttpClient httpClient;
 	private final ObjectMapper objectMapper;
-	private final String baseUrl;
+	private final AuthTokenProvider tokenProvider;
+	private final ErrorMapper errorMapper;
 	private final Duration requestTimeout;
-	private final AuthTokenProvider authTokenProvider;
 
-	/**
-	 * Creates a new REST client instance.
-	 *
-	 * @param httpClient underlying HTTP transport
-	 * @param objectMapper mapper used for JSON serialization and deserialization
-	 * @param baseUrl base API URL
-	 * @param requestTimeout timeout applied to all HTTP requests
-	 * @param authTokenProvider optional bearer token provider
-	 */
-	public RestClient(HttpClient httpClient, ObjectMapper objectMapper, String baseUrl, Duration requestTimeout,
-			AuthTokenProvider authTokenProvider) {
-		this.httpClient = Objects.requireNonNull(httpClient, "httpClient must not be null");
-		this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
-		this.baseUrl = normalizeBaseUrl(baseUrl);
-		this.requestTimeout = Objects.requireNonNull(requestTimeout, "requestTimeout must not be null");
-		this.authTokenProvider = authTokenProvider;
+	public RestClient(
+			URI baseUri,
+			HttpClient httpClient,
+			ObjectMapper objectMapper,
+			AuthTokenProvider tokenProvider,
+			ErrorMapper errorMapper,
+			Duration requestTimeout) {
+
+		this.baseUri = Objects.requireNonNull(baseUri);
+		this.httpClient = Objects.requireNonNull(httpClient);
+		this.objectMapper = Objects.requireNonNull(objectMapper);
+		this.tokenProvider = Objects.requireNonNull(tokenProvider);
+		this.errorMapper = Objects.requireNonNull(errorMapper);
+		this.requestTimeout = Objects.requireNonNull(requestTimeout);
+	}
+	
+	public RestClient(
+			URI baseUri,
+			HttpClient httpClient,
+			ObjectMapper objectMapper,
+			AuthTokenProvider tokenProvider,
+			Duration requestTimeout) {
+
+		this(
+				baseUri,
+				httpClient,
+				objectMapper,
+				tokenProvider,
+				DefaultErrorMapper.INSTANCE,
+				requestTimeout);
 	}
 
-	/**
-	 * Executes a {@code GET} request and deserializes the JSON response.
-	 *
-	 * @param path relative API path
-	 * @param responseType expected response type
-	 * @return deserialized response body, or {@code null} for an empty response
-	 * @param <T> response type
-	 * @throws RestClientException if the request fails or the response cannot be parsed
-	 */
-	public <T> T get(String path, Class<T> responseType) {
-		HttpRequest request = requestBuilder(path).GET().build();
+	public <T> T get(
+			String path,
+			Class<T> responseType) {
+
+		return get(path, Map.of(), responseType);
+	}
+
+	public <T> T get(
+			String path,
+			Map<String, ?> queryParameters,
+			Class<T> responseType) {
+
+		HttpRequest request = requestBuilder(path, queryParameters)
+				.GET()
+				.build();
 
 		return send(request, responseType);
 	}
 
-	/**
-	 * Executes a {@code GET} request with query parameters and deserializes the
-	 * JSON response.
-	 *
-	 * @param path relative API path
-	 * @param queryParams query parameters appended to the request URL
-	 * @param responseType expected response type
-	 * @return deserialized response body, or {@code null} for an empty response
-	 * @param <T> response type
-	 * @throws RestClientException if the request fails or the response cannot be parsed
-	 */
-	public <T> T get(String path, Map<String, ?> queryParams, Class<T> responseType) {
-		String fullPath = appendQueryParams(path, queryParams);
+	public <T> T post(
+			String path,
+			Object requestBody,
+			Class<T> responseType) {
 
-		HttpRequest request = requestBuilder(fullPath).GET().build();
+		return post(
+				path,
+				Map.of(),
+				requestBody,
+				responseType);
+	}
+
+	public <T> T post(
+			String path,
+			Map<String, ?> queryParameters,
+			Object requestBody,
+			Class<T> responseType) {
+
+		HttpRequest request = requestBuilder(path, queryParameters)
+				.header("Content-Type", "application/json")
+				.POST(jsonBody(requestBody))
+				.build();
 
 		return send(request, responseType);
 	}
 
-	/**
-	 * Executes a {@code POST} request using a JSON request body.
-	 *
-	 * @param path relative API path
-	 * @param requestBody request payload serialized as JSON
-	 * @param responseType expected response type
-	 * @return deserialized response body, or {@code null} for an empty response
-	 * @param <T> response type
-	 * @throws RestClientException if the request fails or the response cannot be parsed
-	 */
-	public <T> T post(String path, Object requestBody, Class<T> responseType) {
-		String json = serialize(requestBody);
+	public <T> T put(
+			String path,
+			Object requestBody,
+			Class<T> responseType) {
 
-		HttpRequest request = requestBuilder(path).header("Content-Type", "application/json")
-				.POST(HttpRequest.BodyPublishers.ofString(json)).build();
+		return put(
+				path,
+				Map.of(),
+				requestBody,
+				responseType);
+	}
+
+	public <T> T put(
+			String path,
+			Map<String, ?> queryParameters,
+			Object requestBody,
+			Class<T> responseType) {
+
+		HttpRequest request = requestBuilder(path, queryParameters)
+				.header("Content-Type", "application/json")
+				.PUT(jsonBody(requestBody))
+				.build();
+
+		return send(request, responseType);
+	}
+	
+	public <T> T patch(
+			String path,
+			Object requestBody,
+			Class<T> responseType) {
+
+		return patch(
+				path,
+				Map.of(),
+				requestBody,
+				responseType);
+	}
+	
+	protected <T> T patch(
+			String path,
+			Map<String, ?> queryParameters,
+			Object requestBody,
+			Class<T> responseType) {
+
+		HttpRequest request = requestBuilder(path, queryParameters)
+				.header("Content-Type", "application/json")
+				.method("PATCH", jsonBody(requestBody))
+				.build();
 
 		return send(request, responseType);
 	}
 
-	/**
-	 * Executes a {@code PUT} request using a JSON request body.
-	 *
-	 * @param path relative API path
-	 * @param requestBody request payload serialized as JSON
-	 * @param responseType expected response type
-	 * @return deserialized response body, or {@code null} for an empty response
-	 * @param <T> response type
-	 * @throws RestClientException if the request fails or the response cannot be parsed
-	 */
-	public <T> T put(String path, Object requestBody, Class<T> responseType) {
-		String json = serialize(requestBody);
-
-		HttpRequest request = requestBuilder(path).header("Content-Type", "application/json")
-				.PUT(HttpRequest.BodyPublishers.ofString(json)).build();
-
-		return send(request, responseType);
-	}
-
-	/**
-	 * Executes a {@code DELETE} request.
-	 *
-	 * @param path relative API path
-	 * @throws RestClientException if the request fails
-	 */
 	public void delete(String path) {
-		HttpRequest request = requestBuilder(path).DELETE().build();
-
-		sendWithoutBody(request);
+		delete(path, Map.of());
 	}
 
-	/**
-	 * Executes a {@code DELETE} request and deserializes the JSON response.
-	 *
-	 * @param path relative API path
-	 * @param responseType expected response type
-	 * @return deserialized response body, or {@code null} for an empty response
-	 * @param <T> response type
-	 * @throws RestClientException if the request fails or the response cannot be parsed
-	 */
-	public <T> T delete(String path, Class<T> responseType) {
-		HttpRequest request = requestBuilder(path).DELETE().build();
+	public void delete(
+			String path,
+			Map<String, ?> queryParameters) {
 
-		return send(request, responseType);
+		HttpRequest request = requestBuilder(path, queryParameters)
+				.DELETE()
+				.build();
+
+		send(request, Void.class);
 	}
 
-	/**
-	 * Executes a {@code PATCH} request using a JSON request body.
-	 *
-	 * @param path relative API path
-	 * @param requestBody request payload serialized as JSON
-	 * @param responseType expected response type
-	 * @return deserialized response body, or {@code null} for an empty response
-	 * @param <T> response type
-	 * @throws RestClientException if the request fails or the response cannot be parsed
-	 */
-	public <T> T patch(String path, Object requestBody, Class<T> responseType) {
-		String json = serialize(requestBody);
+	private HttpRequest.Builder requestBuilder(
+			String path,
+			Map<String, ?> queryParameters) {
 
-		HttpRequest request = requestBuilder(path).header("Content-Type", "application/json")
-				.method("PATCH", HttpRequest.BodyPublishers.ofString(json)).build();
+		HttpRequest.Builder builder = HttpRequest.newBuilder()
+				.uri(resolve(path, queryParameters))
+				.timeout(requestTimeout)
+				.header("Accept", "application/json");
 
-		return send(request, responseType);
-	}
+		String token = tokenProvider.getToken();
 
-	private HttpRequest.Builder requestBuilder(String path) {
-		HttpRequest.Builder builder = HttpRequest.newBuilder().uri(URI.create(baseUrl + ensureLeadingSlash(path)))
-				.timeout(requestTimeout).header("Accept", "application/json");
-
-		String token = getAuthToken();
 		if (token != null && !token.isBlank()) {
-			builder.header("Authorization", "Bearer " + token);
+			builder.header(
+					"Authorization",
+					"Bearer " + token);
 		}
 
 		return builder;
 	}
 
-	private <T> T send(HttpRequest request, Class<T> responseType) {
-		HttpResponse<String> response;
+	private <T> T send(
+			HttpRequest request,
+			Class<T> responseType) {
+
 		try {
-			response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-		} catch (IOException e) {
-			throw new RestClientException("I/O error during HTTP call", e);
+
+			HttpResponse<String> response =
+					httpClient.send(
+							request,
+							HttpResponse.BodyHandlers.ofString());
+
+			if (response.statusCode() >= 400) {
+
+				RestErrorResponse error =
+						new RestErrorResponse(
+								response.statusCode(),
+								response.body(),
+								response.headers().map());
+
+				throw errorMapper.map(error, null);
+			}
+
+			return readResponseBody(
+					response.body(),
+					responseType);
+
+		} catch (RestClientException e) {
+
+			throw e;
+
 		} catch (InterruptedException e) {
+
 			Thread.currentThread().interrupt();
-			throw new RestClientException("HTTP call interrupted", e);
-		}
 
-		int status = response.statusCode();
-		String body = response.body();
+			throw new RestClientException(
+					"Request was interrupted.",
+					e);
 
-		if (status >= 200 && status < 300) {
-			if (responseType == Void.class) {
-				return null;
-			}
-
-			if (body == null || body.isBlank()) {
-				return null;
-			}
-
-			try {
-				return objectMapper.readValue(body, responseType);
-			} catch (IOException e) {
-				throw new RestClientException("Failed to deserialize response. Status=" + status + ", body=" + body, e);
-			}
-		}
-
-		throw mapError(status, body);
-	}
-
-	private void sendWithoutBody(HttpRequest request) {
-		HttpResponse<String> response;
-		try {
-			response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 		} catch (IOException e) {
-			throw new RestClientException("I/O error during HTTP call", e);
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			throw new RestClientException("HTTP call interrupted", e);
-		}
 
-		int status = response.statusCode();
-		if (status < 200 || status >= 300) {
-			throw mapError(status, response.body());
+			throw new RestClientException(
+					"Request failed.",
+					e);
 		}
 	}
 
-	private String serialize(Object requestBody) {
+	private HttpRequest.BodyPublisher jsonBody(
+			Object requestBody) {
+
 		try {
-			return objectMapper.writeValueAsString(requestBody);
-		} catch (IOException e) {
-			throw new RestClientException("Failed to serialize request body", e);
+
+			return HttpRequest.BodyPublishers.ofString(
+					objectMapper.writeValueAsString(
+							requestBody));
+
+		} catch (JsonProcessingException e) {
+
+			throw new RestClientException(
+					"Failed to serialize request body.",
+					e);
 		}
 	}
 
-	private RuntimeException mapError(int status, String body) {
-		String message = "HTTP " + status + " returned from server. Body=" + body;
+	private <T> T readResponseBody(
+			String body,
+			Class<T> responseType) {
 
-		return switch (status) {
-		case 400 -> new ValidationException(message);
-		case 401 -> new UnauthorizedException(message);
-		case 403 -> new ForbiddenException(message);
-		case 404 -> new NotFoundException(message);
-		case 409 -> new ConflictException(message);
-		default -> {
-			if (status >= 500) {
-				yield new ServerErrorException(message);
-			}
-			yield new RestClientException(message);
+		if (responseType == Void.class) {
+			return null;
 		}
-		};
+
+		if (responseType == String.class) {
+			return responseType.cast(body);
+		}
+
+		if (body == null || body.isBlank()) {
+			return null;
+		}
+
+		try {
+
+			return objectMapper.readValue(
+					body,
+					responseType);
+
+		} catch (JsonProcessingException e) {
+
+			throw new RestClientException(
+					"Failed to deserialize response body.",
+					e);
+		}
 	}
 
-	private String getAuthToken() {
-		return authTokenProvider == null ? null : authTokenProvider.getToken();
+	private URI resolve(
+			String path,
+			Map<String, ?> queryParameters) {
+
+		URI uri = path == null || path.isBlank()
+				? baseUri
+				: baseUri.resolve(path);
+
+		if (queryParameters == null
+				|| queryParameters.isEmpty()) {
+			return uri;
+		}
+
+		String query = queryParameters.entrySet().stream()
+				.filter(entry -> entry.getValue() != null)
+				.map(entry ->
+						encode(entry.getKey())
+								+ "="
+								+ encode(String.valueOf(
+										entry.getValue())))
+				.collect(Collectors.joining("&"));
+
+		if (query.isBlank()) {
+			return uri;
+		}
+
+		String separator =
+				uri.getQuery() == null ? "?" : "&";
+
+		return URI.create(uri + separator + query);
 	}
 
-	private static String normalizeBaseUrl(String value) {
-		Objects.requireNonNull(value, "baseUrl must not be null");
-		if (value.endsWith("/")) {
-			return value.substring(0, value.length() - 1);
-		}
-		return value;
-	}
-
-	private static String ensureLeadingSlash(String value) {
-		if (value == null || value.isBlank()) {
-			return "";
-		}
-		return value.startsWith("/") ? value : "/" + value;
-	}
-
-	private static String appendQueryParams(String path, Map<String, ?> queryParams) {
-		if (queryParams == null || queryParams.isEmpty()) {
-			return path;
-		}
-
-		StringJoiner joiner = new StringJoiner("&");
-		for (Map.Entry<String, ?> entry : queryParams.entrySet()) {
-			if (entry.getValue() == null) {
-				continue;
-			}
-
-			String key = URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8);
-			String value = URLEncoder.encode(String.valueOf(entry.getValue()), StandardCharsets.UTF_8);
-			joiner.add(key + "=" + value);
-		}
-
-		String query = joiner.toString();
-		if (query.isEmpty()) {
-			return path;
-		}
-
-		return path + (path.contains("?") ? "&" : "?") + query;
+	private String encode(String value) {
+		return URLEncoder.encode(
+				value,
+				StandardCharsets.UTF_8);
 	}
 }

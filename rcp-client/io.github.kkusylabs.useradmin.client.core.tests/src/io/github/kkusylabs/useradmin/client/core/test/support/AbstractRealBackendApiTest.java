@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Duration;
 
@@ -37,8 +38,12 @@ public abstract class AbstractRealBackendApiTest {
 
 		tokenStore = new SessionTokenStore();
 
-		restClient = new RestClient(httpClient, objectMapper, baseUrl, Duration.ofSeconds(20),
-				new SessionAuthTokenProvider(tokenStore));
+		restClient = new RestClient(
+				URI.create(baseUrl),
+				httpClient,
+				objectMapper,
+				new SessionAuthTokenProvider(tokenStore),
+				Duration.ofSeconds(20));
 
 		authApiClient = new AuthApiClient(restClient);
 	}
