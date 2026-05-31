@@ -1,5 +1,12 @@
 package io.github.kkusylabs.useradmin.client.core.api;
 
+/**
+ * Default {@link ErrorMapper} implementation that maps HTTP status codes
+ * to the standard {@link RestClientException} hierarchy.
+ *
+ * <p>For APIs with custom error response formats, provide a custom
+ * {@link ErrorMapper} implementation.
+ */
 public final class DefaultErrorMapper implements ErrorMapper {
 
 	public static final DefaultErrorMapper INSTANCE =

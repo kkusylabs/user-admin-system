@@ -13,6 +13,12 @@ import io.github.kkusylabs.useradmin.client.core.api.UnauthorizedException;
 import io.github.kkusylabs.useradmin.client.core.auth.SessionTokenStore;
 import io.github.kkusylabs.useradmin.client.ui.events.AppTopics;
 
+/**
+ * Handles API errors in the UI layer.
+ *
+ * <p>Provides standard application behavior for authentication failures,
+ * error dialogs, and asynchronous exception unwrapping.
+ */
 public final class ApiErrorHandler {
 
 	private final IEventBroker eventBroker;
@@ -21,6 +27,13 @@ public final class ApiErrorHandler {
 
 	private final ExceptionDialogMessageMapper dialogMessageMapper;
 
+	/**
+	 * Creates an API error handler.
+	 *
+	 * @param eventBroker application event broker
+	 * @param tokenStore session token store
+	 * @param dialogMessageMapper maps exceptions to user-facing messages
+	 */
 	public ApiErrorHandler(
 			IEventBroker eventBroker,
 			SessionTokenStore tokenStore,
@@ -31,6 +44,18 @@ public final class ApiErrorHandler {
 		this.dialogMessageMapper = Objects.requireNonNull(dialogMessageMapper);
 	}
 
+	/**
+	 * Handles an API error using the application's default error behavior.
+	 *
+	 * <p>Authentication failures clear the current session and publish an
+	 * authentication-expired event. All other errors are displayed in an
+	 * error dialog.
+	 *
+	 * @param shell parent shell
+	 * @param error error to handle
+	 * @param errorTitle dialog title
+	 * @param fallbackErrorMessage fallback message when no error message is available
+	 */
 	public void handleDefault(
 			Shell shell,
 			Throwable error,
@@ -52,6 +77,12 @@ public final class ApiErrorHandler {
 		MessageDialog.openError(shell, errorTitle, message);
 	}
 
+	/**
+	 * Unwraps nested execution exceptions and returns the underlying cause.
+	 *
+	 * @param error wrapped exception
+	 * @return root cause exception
+	 */
 	public static Throwable unwrap(Throwable error) {
 		Throwable current = error;
 

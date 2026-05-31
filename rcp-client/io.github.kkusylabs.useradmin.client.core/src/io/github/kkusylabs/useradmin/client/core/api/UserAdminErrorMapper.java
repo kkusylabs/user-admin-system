@@ -5,10 +5,24 @@ import java.util.Objects;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * {@link ErrorMapper} implementation for the User Admin API.
+ *
+ * <p>Parses API-specific error responses and maps them to the
+ * appropriate {@link RestClientException} subtype. Validation
+ * errors are mapped to {@link ValidationException} and include
+ * field-level validation details when available.
+ */
 public class UserAdminErrorMapper implements ErrorMapper {
 
 	private final ObjectMapper objectMapper;
 
+	/**
+	 * Creates a User Admin API error mapper.
+	 *
+	 * @param objectMapper object mapper used to deserialize API
+	 *        error responses
+	 */
 	public UserAdminErrorMapper(ObjectMapper objectMapper) {
 		this.objectMapper = Objects.requireNonNull(objectMapper);
 	}
@@ -98,6 +112,17 @@ public class UserAdminErrorMapper implements ErrorMapper {
 		return value != null && !value.isBlank();
 	}
 
+	/**
+	 * User Admin API error response.
+	 *
+	 * @param detail detailed error message
+	 * @param instance request path associated with the error
+	 * @param status HTTP status code
+	 * @param title error summary
+	 * @param timestamp error timestamp
+	 * @param code application-specific error code
+	 * @param errors field-level validation errors
+	 */
 	public record ApiError(
 			String detail,
 			String instance,

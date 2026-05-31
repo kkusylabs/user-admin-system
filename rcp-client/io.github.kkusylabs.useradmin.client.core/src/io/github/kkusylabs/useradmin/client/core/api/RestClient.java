@@ -17,6 +17,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.github.kkusylabs.useradmin.client.core.auth.AuthTokenProvider;
 
+/**
+ * Generic HTTP client for communicating with JSON-based REST APIs.
+ *
+ * <p>Provides convenience methods for common HTTP operations and handles
+ * request serialization, response deserialization, authentication, and
+ * error mapping.
+ *
+ * <p>Authentication headers are supplied by an {@link AuthTokenProvider}.
+ * HTTP error responses are converted to {@link RestClientException}
+ * instances using an {@link ErrorMapper}.
+ */
 public class RestClient {
 
 	private final URI baseUri;
@@ -26,6 +37,16 @@ public class RestClient {
 	private final ErrorMapper errorMapper;
 	private final Duration requestTimeout;
 
+	/**
+	 * Creates a REST client using the specified configuration.
+	 *
+	 * @param baseUri base URI of the target API
+	 * @param httpClient HTTP client used to execute requests
+	 * @param objectMapper JSON serializer and deserializer
+	 * @param tokenProvider provider used to supply bearer tokens
+	 * @param errorMapper maps HTTP error responses to exceptions
+	 * @param requestTimeout request timeout applied to all requests
+	 */
 	public RestClient(
 			URI baseUri,
 			HttpClient httpClient,
@@ -42,6 +63,16 @@ public class RestClient {
 		this.requestTimeout = Objects.requireNonNull(requestTimeout);
 	}
 	
+	/**
+	 * Creates a REST client using the default
+	 * {@link DefaultErrorMapper}.
+	 *
+	 * @param baseUri base URI of the target API
+	 * @param httpClient HTTP client used to execute requests
+	 * @param objectMapper JSON serializer and deserializer
+	 * @param tokenProvider provider used to supply bearer tokens
+	 * @param requestTimeout request timeout applied to all requests
+	 */
 	public RestClient(
 			URI baseUri,
 			HttpClient httpClient,

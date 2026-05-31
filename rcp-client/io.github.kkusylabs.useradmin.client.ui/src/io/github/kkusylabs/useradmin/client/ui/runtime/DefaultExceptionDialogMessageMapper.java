@@ -6,6 +6,12 @@ import io.github.kkusylabs.useradmin.client.core.api.RestClientException;
 import io.github.kkusylabs.useradmin.client.core.api.ServerErrorException;
 import io.github.kkusylabs.useradmin.client.core.api.ValidationException;
 
+/**
+ * Default implementation of {@link ExceptionDialogMessageMapper}.
+ *
+ * <p>Formats exceptions into user-facing dialog messages and provides
+ * specialized handling for validation and server errors.
+ */
 public class DefaultExceptionDialogMessageMapper
 		implements ExceptionDialogMessageMapper {
 
