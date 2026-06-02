@@ -1,38 +1,21 @@
 # User Administration System
 
-A full-stack Java application for managing users, roles, and departments with a focus on:
-
-* centralized authorization
-* capability-driven APIs
-* enterprise CRUD workflows
-* desktop client integration
-* real-world business rules
+A Java application for managing users, roles, and departments.
 
 The project consists of:
 
-* **Spring Boot backend API**
-* **Eclipse RCP desktop client (SWT/JFace)**
-* **PostgreSQL database**
-* **JWT authentication**
+- Spring Boot REST API
+- Eclipse RCP desktop client
+- PostgreSQL database
+- JWT authentication
 
-# Overview
+The application demonstrates:
 
-This project models a typical internal administration system where user management is constrained by:
-
-* role-based authorization
-* department restrictions
-* business invariants
-* workflow permissions
-
-The backend exposes a REST API consumed by an Eclipse RCP desktop client.
-
-The system emphasizes:
-
-* centralized authorization logic
-* capability-driven API responses
-* PATCH-style updates
-* async desktop UI integration
-* real-world administrative workflows
+- role-based authorization
+- department-based restrictions
+- business rule enforcement
+- paginated REST APIs
+- desktop client integration
 
 ## Screenshots
 
@@ -109,6 +92,45 @@ Persistence using Spring Data JPA.
 
 Explicit API contracts and transformations between entities and API models.
 
+### Capabilities-Based API
+
+Responses include capabilities describing what actions the current actor may perform.
+
+Example:
+
+```json
+{
+  "canEditProfile": true,
+  "canEditRole": false,
+  "canEditDepartment": false
+}
+```
+
+This allows the client UI to:
+
+* dynamically enable/disable controls
+* avoid duplicating authorization logic
+* remain consistent with backend permissions
+
+### PATCH-Style Updates
+
+User updates follow PATCH-style semantics.
+
+* only provided fields are updated
+* omitted fields remain unchanged
+* validation and authorization are applied per-field
+
+The backend uses `JsonNullable` to distinguish:
+
+* field not provided
+* field explicitly set to null
+
+The desktop client builds patches dynamically based on:
+
+* editable capabilities
+* actual changed values
+
+
 ## Desktop Client (Eclipse RCP)
 
 The desktop client is built with:
@@ -117,6 +139,17 @@ The desktop client is built with:
 * SWT
 * JFace
 * async REST client integration
+
+Features include:
+
+* paginated user table
+* filter/search support
+* role and department filtering
+* UI actions enabled based on user permissions
+* inline create/edit workflows
+* master-detail layout
+* page-size controls
+* async loading
 
 The UI follows a composite-oriented structure consisting of:
 
@@ -127,27 +160,6 @@ The UI follows a composite-oriented structure consisting of:
 * UI orchestration layer
 
 The client communicates with the backend exclusively through REST APIs and capability-driven responses.
-
-## Desktop Client and Modernization Context
-
-The project intentionally includes an Eclipse RCP desktop client to explore modernization concerns commonly found in enterprise Java environments.
-
-While many new greenfield applications use web technologies such as React and HTML5, organizations frequently maintain existing desktop tooling for operational, workflow, or platform reasons.
-
-This project demonstrates:
-
-* integrating a modern Spring Boot REST backend with a stateful desktop UI
-* capability-driven authorization shared between backend and client
-* async UI coordination patterns
-* separation between API contracts and presentation logic
-* enterprise CRUD workflows in a rich-client environment
-
-The backend API is intentionally UI-agnostic and could support:
-
-* React/Angular/Vue frontends
-* additional desktop clients
-* mobile applications
-* external integrations
 
 # Authorization Model
 
@@ -180,44 +192,6 @@ The system enforces several business invariants.
 * Role assignment is constrained by actor permissions
 
 These rules are enforced in the service layer rather than only at the API boundary.
-
-# Capabilities-Based API
-
-Responses include capabilities describing what actions the current actor may perform.
-
-Example:
-
-```json
-{
-  "canEditProfile": true,
-  "canEditRole": false,
-  "canEditDepartment": false
-}
-```
-
-This allows the client UI to:
-
-* dynamically enable/disable controls
-* avoid duplicating authorization logic
-* remain consistent with backend permissions
-
-# PATCH-Style Updates
-
-User updates follow PATCH-style semantics.
-
-* only provided fields are updated
-* omitted fields remain unchanged
-* validation and authorization are applied per-field
-
-The backend uses `JsonNullable` to distinguish:
-
-* field not provided
-* field explicitly set to null
-
-The desktop client builds patches dynamically based on:
-
-* editable capabilities
-* actual changed values
 
 # API Overview
 
@@ -279,31 +253,6 @@ Updates a department.
 
 Deletes a department.
 
-# Desktop Client Features
-
-## User Management
-
-* paginated user table
-* filter/search support
-* role and department filtering
-* capability-aware editing
-* inline create/edit workflows
-* master-detail layout
-* page-size controls
-* async loading
-
-## Department Management
-
-* department CRUD workflows
-* active/inactive departments
-* capability-aware actions
-
-## Authentication
-
-* JWT login flow
-* session expiration handling
-* token-aware API client
-
 # Running the Project
 
 ## Requirements
@@ -311,81 +260,57 @@ Deletes a department.
 * Java 21+
 * Docker
 
-# Backend
+## Running the Backend
 
-## Development Mode
+### Development Mode
 
 Use this workflow for local backend development.
 
-From the backend module:
+Starts PostgreSQL with Docker and runs Spring Boot from source.
 
 ```bash
 cd backend
-```
-
-### Start PostgreSQL
-
-```bash
 docker compose -f compose.dev-db.yml up -d
-```
-
-### Run Spring Boot
-
-```bash
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-The backend runs at:
+### Demo Mode
 
-http://localhost:8080
-
-The REST API base URL is:
-
-http://localhost:8080/api
-
-This starts the backend directly from source using the dev profile
-
-## Full Stack Demo Mode
-
-Use Docker Compose to run the complete demo stack.
-
-Runs:
-
-* Spring Boot backend
-* PostgreSQL
+Run the packaged demo stack:
 
 ```bash
 cd backend
 docker compose up --build
 ```
 
-The backend and API are available at:
+### Endpoints
 
 ```text
-http://localhost:8080
-http://localhost:8080/api
+Application: http://localhost:8080
+API:         http://localhost:8080/api
+Swagger UI:  http://localhost:8080/swagger-ui/index.html
 ```
-## Testing
 
-The project includes:
+### Demo login
+```text
+username: admin
+password: demo12345
+```
 
-* controller integration tests
-* repository tests
-* authorization rule coverage
-* business invariant testing
+### Testing
 
-### Run Tests
+Run all tests:
 
 ```bash
 cd backend
 ./mvnw test
 ```
 
-# Building and Running the RCP Client
+## Building and Running the RCP Client
 
 The Eclipse RCP client is built separately from the backend.
 
-## Build the Client
+### Build the Client
 
 From a terminal, go to the RCP master project:
 
@@ -396,7 +321,7 @@ cd rcp-client/io.github.kkusylabs.useradmin.client.master
 
 This builds the client product for the supported platforms.
 
-## Locate the Built Product
+### Build Output
 
 After the build completes, the packaged client applications are created under:
 
@@ -412,7 +337,7 @@ useradmin-macosx.cocoa.x86_64.tar.gz
 useradmin-win32.win32.x86_64.zip
 ```
 
-## Run the Client
+### Run the Client
 
 1. Copy the appropriate archive for your platform to a convenient location.
 
@@ -437,34 +362,27 @@ useradmin-win32.win32.x86_64.zip
   * Windows → double-click `useradmin.exe`
   * Linux/macOS → run the useradmin launcher
 
-## Demo Login
+### Backend Connection
 
-```text
-username: admin
-password: demo12345
-```
-
-## Backend Requirement
-
-The backend API must be running before logging into the desktop client.
+The backend API must be running before using the desktop client.
 
 By default, the RCP client connects to:
 ```text
 http://localhost:8080/api
 ```
-The API base URL can be overridden using either a Java system property or an environment variable.
+To use a different API endpoint, set either:
 
-### Java System Property
+**Java System Property**
 
 ```bash
 -Duseradmin.api.baseUrl=http://localhost:8080/api
 ```
-### Environment Variable
+**Environment Variable**
 ```bash
 USERADMIN_API_BASEURL=http://localhost:8080/api
 ```
 
-# Using Swagger UI
+## Using Swagger UI
 
 After starting the backend, open Swagger UI:
 
@@ -474,7 +392,7 @@ http://localhost:8080/swagger-ui/index.html
 
 Swagger UI lets you view and test the API endpoints from your browser.
 
-## Log in
+### Log in
 1. Open `POST /api/auth/login`
 2. Click **Try it out**
 3. Enter credentials:
@@ -487,7 +405,7 @@ Swagger UI lets you view and test the API endpoints from your browser.
 4. Click **Execute**
 5. Copy the `accessToken` from the response
 
-## Authorize request
+### Authorize request
 1. Click **Authorize** near the top of the page
 2. Paste the `accessToken` in the Value text field
 3. Click **Authorize**
@@ -495,67 +413,18 @@ Swagger UI lets you view and test the API endpoints from your browser.
 
 You can now call protected endpoints from Swagger UI.
 
-## Verify authentication
+### Verify authentication
 
 Open `GET /api/auth/me` and click **Execute**
 
 If Authorization is working, it returns the currently authenticated user
 
-## Example workflow
+### Example workflow
 
 1. Log in
 2. Authorize using your token
 3. Call `GET /api/departments` to view departments
 4. Call `POST /api/departments` (admin only) to create one
-
-# Database
-
-* PostgreSQL
-
-# Notable Implementation Details
-
-## Centralized Authorization
-
-Authorization logic is intentionally isolated from business workflows.
-
-Benefits:
-
-* improved maintainability
-* reduced duplication
-* easier testing
-* clearer business logic
-
-## Capability-Driven UI
-
-The backend returns capabilities describing allowed actions.
-
-This keeps:
-
-* backend rules authoritative
-* frontend logic simpler
-* UI behavior consistent
-
-## Async Desktop UI Coordination
-
-The RCP client uses asynchronous API execution to avoid blocking the SWT UI thread.
-
-The client coordinates:
-
-* loading states
-* authentication expiration
-* workflow transitions
-* REST error handling
-
-## Explicit Partial Update Handling
-
-PATCH semantics are implemented explicitly rather than relying on entity merging.
-
-This allows:
-
-* field-level authorization
-* safer updates
-* clearer validation behavior
-* better auditability
 
 # Future Enhancements
 
@@ -566,7 +435,6 @@ This allows:
 * Inline field validation feedback
 * Advanced table sorting
 * Additional automated UI testing
-* Optional future web frontend using React or Angular
 
 # Acknowlegements
 
